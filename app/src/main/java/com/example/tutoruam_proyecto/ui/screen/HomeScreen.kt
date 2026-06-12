@@ -1,5 +1,7 @@
 package com.example.tutoruam_proyecto.ui.screen
 
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Chat
@@ -20,6 +22,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.tutoruam_proyecto.ui.model.UserRole
 import com.example.tutoruam_proyecto.ui.navigation.ChatDestination
 import com.example.tutoruam_proyecto.ui.navigation.PerfilDestination
 import com.example.tutoruam_proyecto.ui.navigation.TutoriasDestination
@@ -27,6 +30,8 @@ import com.example.tutoruam_proyecto.ui.navigation.TutoriasDestination
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
+    role: UserRole,
+    onChangeRole: () -> Unit,
     onLogout: () -> Unit
 ) {
     val homeNavController = rememberNavController()
@@ -87,6 +92,8 @@ fun HomeScreen(
         HomeNavHost(
             modifier = Modifier.padding(innerPadding),
             navController = homeNavController,
+            role = role,
+            onChangeRole = onChangeRole,
             onLogout = onLogout
         )
     }
@@ -103,21 +110,30 @@ private data class BottomItem(
 private fun HomeNavHost(
     modifier: Modifier,
     navController: NavHostController,
+    role: UserRole,
+    onChangeRole: () -> Unit,
     onLogout: () -> Unit
 ) {
     NavHost(
         navController = navController,
         startDestination = TutoriasDestination,
-        modifier = modifier
+        modifier = modifier,
+        enterTransition = { EnterTransition.None },
+        exitTransition = { ExitTransition.None },
+        popEnterTransition = { EnterTransition.None },
+        popExitTransition = { ExitTransition.None }
     ) {
         composable<TutoriasDestination> {
-            TutoriasScreen()
+            TutoriasScreen(role = role)
         }
         composable<ChatDestination> {
             ChatScreen()
         }
         composable<PerfilDestination> {
-            PerfilScreen(onLogout = onLogout)
+            PerfilScreen(
+                onChangeRole = onChangeRole,
+                onLogout = onLogout
+            )
         }
     }
 }

@@ -9,6 +9,9 @@ object LoginDestination
 @Serializable
 object HomeDestination
 
+@Serializable
+object RoleSelectionDestination
+
 // Rutas de la barra inferior dentro de Home.
 @Serializable
 object TutoriasDestination

@@ -10,13 +10,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 
 @Composable
-fun PerfilScreen(onLogout: () -> Unit = {}) {
+fun PerfilScreen(
+    onChangeRole: () -> Unit = {},
+    onLogout: () -> Unit = {}
+) {
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Text("Perfil")
+        Button(onClick = onChangeRole) {
+            Text("Cambiar rol")
+        }
         Button(onClick = onLogout) {
             Text("Cerrar sesión")
         }

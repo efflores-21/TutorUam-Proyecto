@@ -18,3 +18,9 @@ val BlueSecondary = Color(0xFF42A5F5)
 val BackgroundLight = Color(0xFFF5F7FA)
 
 val White = Color(0xFFFFFFFF)
+
+// UAM Colors
+val UamPrimary = Color(0xFF0061A5)
+val UamBackground = Color(0xFFF7F9FB)
+val UamSurfaceVariant = Color(0xFFF2F4F6)
+val UamOnSurfaceVariant = Color(0xFF3F4753)
