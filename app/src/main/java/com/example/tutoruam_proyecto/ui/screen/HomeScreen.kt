@@ -4,15 +4,21 @@ import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Chat
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.rounded.ChatBubble
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.School
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -40,34 +46,32 @@ fun HomeScreen(
     val items = listOf(
         BottomItem(
             label = "Tutoría",
-            icon = Icons.Default.School,
+            icon = Icons.Rounded.School,
             destination = TutoriasDestination,
-            isSelected = { destination ->
-                destination?.hierarchy?.any { it.hasRoute<TutoriasDestination>() } == true
-            }
+            isSelected = { dest -> dest?.hierarchy?.any { it.hasRoute<TutoriasDestination>() } == true }
         ),
         BottomItem(
             label = "Chat",
-            icon = Icons.Default.Chat,
+            icon = Icons.Rounded.ChatBubble,
             destination = ChatDestination,
-            isSelected = { destination ->
-                destination?.hierarchy?.any { it.hasRoute<ChatDestination>() } == true
-            }
+            isSelected = { dest -> dest?.hierarchy?.any { it.hasRoute<ChatDestination>() } == true }
         ),
         BottomItem(
             label = "Perfil",
-            icon = Icons.Default.Person,
+            icon = Icons.Rounded.Person,
             destination = PerfilDestination,
-            isSelected = { destination ->
-                destination?.hierarchy?.any { it.hasRoute<PerfilDestination>() } == true
-            }
+            isSelected = { dest -> dest?.hierarchy?.any { it.hasRoute<PerfilDestination>() } == true }
         )
     )
 
     Scaffold(
         modifier = modifier,
         bottomBar = {
-            NavigationBar {
+            NavigationBar(
+                containerColor = MaterialTheme.colorScheme.surface,
+                modifier = Modifier.shadow(8.dp),
+                tonalElevation = 0.dp
+            ) {
                 items.forEach { item ->
                     val selected = item.isSelected(currentDestination)
 
@@ -82,8 +86,26 @@ fun HomeScreen(
                                 restoreState = true
                             }
                         },
-                        icon = { androidx.compose.material3.Icon(item.icon, contentDescription = item.label) },
-                        label = { Text(item.label) }
+                        icon = {
+                            Icon(
+                                item.icon,
+                                contentDescription = item.label,
+                                tint = if (selected) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        },
+                        label = {
+                            Text(
+                                item.label,
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                                color = if (selected) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        },
+                        colors = NavigationBarItemDefaults.colors(
+                            indicatorColor = MaterialTheme.colorScheme.secondaryContainer
+                        )
                     )
                 }
             }

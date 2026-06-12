@@ -15,8 +15,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
@@ -27,7 +29,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -42,20 +43,20 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.tutoruam_proyecto.ui.components.UamTextField
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
-fun LoginScreen(
-    onLoginSuccess: () -> Unit,
-    onNavigateToRegister: () -> Unit
+fun RegisterScreen(
+    onRegisterSuccess: () -> Unit,
+    onNavigateToLogin: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
+    var name by remember { mutableStateOf("") }
+    var cif by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
@@ -89,10 +90,34 @@ fun LoginScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     AuthHeader(
-                        subtitle = "Ingresa tus credenciales"
+                        subtitle = "Crea tu cuenta universitaria"
                     )
 
                     Spacer(modifier = Modifier.height(32.dp))
+
+                    UamTextField(
+                        value = name,
+                        onValueChange = { name = it; errorMessage = "" },
+                        label = "Nombre",
+                        placeholder = "Nombre completo",
+                        leadingIcon = Icons.Default.Person,
+                        isError = errorMessage.isNotEmpty() && name.isBlank(),
+                        errorText = if (errorMessage.isNotEmpty() && name.isBlank()) "Campo requerido" else null
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    UamTextField(
+                        value = cif,
+                        onValueChange = { cif = it; errorMessage = "" },
+                        label = "CIF",
+                        placeholder = "ID Universitario",
+                        leadingIcon = Icons.Default.Badge,
+                        isError = errorMessage.isNotEmpty() && cif.isBlank(),
+                        errorText = if (errorMessage.isNotEmpty() && cif.isBlank()) "Campo requerido" else null
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
 
                     UamTextField(
                         value = email,
@@ -127,8 +152,12 @@ fun LoginScreen(
                                 )
                             }
                         },
-                        isError = errorMessage.isNotEmpty() && password.isBlank(),
-                        errorText = if (errorMessage.isNotEmpty() && password.isBlank()) "Campo requerido" else null
+                        isError = errorMessage.isNotEmpty() && (password.isBlank() || errorMessage.contains("contraseña")),
+                        errorText = when {
+                            errorMessage.contains("contraseña") -> errorMessage
+                            errorMessage.isNotEmpty() && password.isBlank() -> "Campo requerido"
+                            else -> null
+                        }
                     )
 
                     Spacer(modifier = Modifier.height(32.dp))
@@ -136,11 +165,14 @@ fun LoginScreen(
                     Button(
                         onClick = {
                             when {
-                                email.isBlank() || password.isBlank() -> {
+                                name.isBlank() || cif.isBlank() || email.isBlank() || password.isBlank() -> {
                                     errorMessage = "Por favor, complete todos los campos"
                                 }
                                 !email.contains("@") -> {
                                     errorMessage = "Correo no válido"
+                                }
+                                password.length < 6 -> {
+                                    errorMessage = "La contraseña debe tener al menos 6 caracteres"
                                 }
                                 else -> {
                                     errorMessage = ""
@@ -148,7 +180,7 @@ fun LoginScreen(
                                         loading = true
                                         delay(800)
                                         loading = false
-                                        onLoginSuccess()
+                                        onRegisterSuccess()
                                     }
                                 }
                             }
@@ -171,7 +203,7 @@ fun LoginScreen(
                             )
                         } else {
                             Text(
-                                text = "Iniciar sesión",
+                                text = "Registrarse",
                                 style = MaterialTheme.typography.bodyLarge,
                                 fontWeight = FontWeight.Bold
                             )
@@ -180,9 +212,9 @@ fun LoginScreen(
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    TextButton(onClick = onNavigateToRegister) {
+                    TextButton(onClick = onNavigateToLogin) {
                         Text(
-                            text = "¿No tienes cuenta? Regístrate",
+                            text = "¿Ya tienes cuenta? Inicia sesión",
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
@@ -192,44 +224,4 @@ fun LoginScreen(
             }
         }
     }
-}
-
-@Composable
-internal fun AuthHeader(subtitle: String) {
-    Surface(
-        modifier = Modifier
-            .size(96.dp)
-            .padding(bottom = 12.dp),
-        shape = RoundedCornerShape(48.dp),
-        color = MaterialTheme.colorScheme.primary,
-        shadowElevation = 4.dp
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Text(
-                text = "UAM",
-                style = MaterialTheme.typography.displaySmall.copy(fontSize = 24.sp),
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onPrimary
-            )
-        }
-    }
-
-    Spacer(modifier = Modifier.height(12.dp))
-
-    Text(
-        text = "Universidad Americana",
-        style = MaterialTheme.typography.headlineMedium,
-        fontWeight = FontWeight.Bold,
-        textAlign = TextAlign.Center,
-        color = MaterialTheme.colorScheme.primary
-    )
-
-    Spacer(modifier = Modifier.height(4.dp))
-
-    Text(
-        text = subtitle,
-        style = MaterialTheme.typography.bodyLarge,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        textAlign = TextAlign.Center
-    )
 }

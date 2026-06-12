@@ -12,9 +12,10 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.tutoruam_proyecto.ui.model.UserRole
 import com.example.tutoruam_proyecto.ui.screen.HomeScreen
 import com.example.tutoruam_proyecto.ui.screen.LoginScreen
-import com.example.tutoruam_proyecto.ui.model.UserRole
+import com.example.tutoruam_proyecto.ui.screen.RegisterScreen
 import com.example.tutoruam_proyecto.ui.screen.RoleSelectionScreen
 
 @Composable
@@ -33,6 +34,22 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                     navController.navigate(RoleSelectionDestination) {
                         popUpTo(LoginDestination) { inclusive = true }
                     }
+                },
+                onNavigateToRegister = {
+                    navController.navigate(RegisterDestination)
+                }
+            )
+        }
+
+        composable<RegisterDestination> {
+            RegisterScreen(
+                onRegisterSuccess = {
+                    navController.navigate(RoleSelectionDestination) {
+                        popUpTo(LoginDestination) { inclusive = true }
+                    }
+                },
+                onNavigateToLogin = {
+                    navController.popBackStack()
                 }
             )
         }

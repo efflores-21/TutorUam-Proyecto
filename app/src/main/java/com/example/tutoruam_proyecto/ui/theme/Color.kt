@@ -2,25 +2,46 @@ package com.example.tutoruam_proyecto.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val Purple80 = Color(0xFFD0BCFF)
-val PurpleGrey80 = Color(0xFFCCC2DC)
-val Pink80 = Color(0xFFEFB8C8)
+// Primary Color System (UAM Heritage Blue)
+val PrimaryBlue = Color(0xFF00457C)
+val OnPrimaryBlue = Color(0xFFFFFFFF)
+val PrimaryContainerBlue = Color(0xFF005DA4)
+val OnPrimaryContainerBlue = Color(0xFFBAD6FF)
+val InversePrimaryBlue = Color(0xFFA2C9FF)
 
-val Purple40 = Color(0xFF6650a4)
-val PurpleGrey40 = Color(0xFF625b71)
-val Pink40 = Color(0xFF7D5260)
+// Secondary Color System (Cool Slate Blue)
+val SecondaryCool = Color(0xFF576066)
+val OnSecondaryCool = Color(0xFFFFFFFF)
+val SecondaryContainerCool = Color(0xFFDBE4EB)
+val OnSecondaryContainerCool = Color(0xFF5D666C)
 
-//Colores Agregados
-val BluePrimary = Color(0xFF1565C0)
+// Tertiary Color System (Academic Charcoal)
+val TertiaryNeutral = Color(0xFF364552)
+val OnTertiaryNeutral = Color(0xFFFFFFFF)
+val TertiaryContainerNeutral = Color(0xFF4D5D6B)
+val OnTertiaryContainerNeutral = Color(0xFFC5D6E6)
 
-val BlueSecondary = Color(0xFF42A5F5)
+// Surface & Background System
+val BackgroundLight = Color(0xFFF8F9FB)
+val OnBackgroundLight = Color(0xFF191C1E)
 
-val BackgroundLight = Color(0xFFF5F7FA)
+val SurfaceLight = Color(0xFFF8F9FB)
+val OnSurfaceLight = Color(0xFF191C1E)
+val SurfaceVariantLight = Color(0xFFE1E2E4)
+val OnSurfaceVariantLight = Color(0xFF414751)
 
-val White = Color(0xFFFFFFFF)
+val SurfaceContainerLowest = Color(0xFFFFFFFF)
+val SurfaceContainerLow = Color(0xFFF2F4F6)
+val SurfaceContainer = Color(0xFFEDEEF0)
+val SurfaceContainerHigh = Color(0xFFE7E8EA)
+val SurfaceContainerHighest = Color(0xFFE1E2E4)
 
-// UAM Colors
-val UamPrimary = Color(0xFF0061A5)
-val UamBackground = Color(0xFFF7F9FB)
-val UamSurfaceVariant = Color(0xFFF2F4F6)
-val UamOnSurfaceVariant = Color(0xFF3F4753)
+// Outline & Borders
+val OutlineMuted = Color(0xFF727782)
+val OutlineVariantMuted = Color(0xFFC1C7D2)
+
+// Error States
+val ErrorRed = Color(0xFFBA1A1A)
+val OnErrorWhite = Color(0xFFFFFFFF)
+val ErrorContainerRed = Color(0xFFFFDAD6)
+val OnErrorContainerRed = Color(0xFF93000A)
