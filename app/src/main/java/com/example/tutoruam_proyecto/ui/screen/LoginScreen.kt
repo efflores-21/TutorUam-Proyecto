@@ -31,11 +31,13 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -46,21 +48,40 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.tutoruam_proyecto.ui.components.UamTextField
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import com.example.tutoruam_proyecto.ui.service.ApiResult
+import com.example.tutoruam_proyecto.ui.service.ServiceLocator
+import com.example.tutoruam_proyecto.ui.viewmodel.LoginViewModel
+import com.example.tutoruam_proyecto.ui.viewmodel.LoginViewModelFactory
 
 @Composable
 fun LoginScreen(
     onLoginSuccess: () -> Unit,
     onNavigateToRegister: () -> Unit
 ) {
-    val scope = rememberCoroutineScope()
+    val viewModel: LoginViewModel = viewModel(
+        factory = LoginViewModelFactory(ServiceLocator.authRepository)
+    )
+    val loginState by viewModel.loginState.collectAsState()
     val scrollState = rememberScrollState()
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
-    var loading by remember { mutableStateOf(false) }
     var showPassword by remember { mutableStateOf(false) }
+    val loading = loginState is ApiResult.Loading
+
+    LaunchedEffect(loginState) {
+        when (val state = loginState) {
+            is ApiResult.Success -> {
+                viewModel.clearLoginState()
+                onLoginSuccess()
+            }
+            is ApiResult.Error -> {
+                errorMessage = state.message ?: "Error inesperado"
+                viewModel.clearLoginState()
+            }
+            else -> Unit
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -144,12 +165,7 @@ fun LoginScreen(
                                 }
                                 else -> {
                                     errorMessage = ""
-                                    scope.launch {
-                                        loading = true
-                                        delay(800)
-                                        loading = false
-                                        onLoginSuccess()
-                                    }
+                                    viewModel.login(email, password)
                                 }
                             }
                         },

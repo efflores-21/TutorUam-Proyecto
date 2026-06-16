@@ -1,0 +1,10 @@
+package com.example.tutoruam_proyecto.ui.repository
+
+import com.example.tutoruam_proyecto.ui.model.LoginResponse
+import com.example.tutoruam_proyecto.ui.model.RegisterRequest
+import com.example.tutoruam_proyecto.ui.service.ApiResult
+
+interface AuthRepository {
+    suspend fun login(email: String, password: String): ApiResult<LoginResponse>
+    suspend fun register(request: RegisterRequest): ApiResult<LoginResponse>
+}
