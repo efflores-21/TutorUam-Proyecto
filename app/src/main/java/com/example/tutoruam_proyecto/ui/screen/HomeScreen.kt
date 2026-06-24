@@ -24,12 +24,15 @@ import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
+import androidx.navigation.toRoute
+import com.example.tutoruam_proyecto.ui.service.TokenManager
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.tutoruam_proyecto.ui.model.UserRole
 import com.example.tutoruam_proyecto.ui.navigation.ChatDestination
+import com.example.tutoruam_proyecto.ui.navigation.ChatDetailDestination
 import com.example.tutoruam_proyecto.ui.navigation.PerfilDestination
 import com.example.tutoruam_proyecto.ui.navigation.TutoriasDestination
 
@@ -146,13 +149,33 @@ private fun HomeNavHost(
         popExitTransition = { ExitTransition.None }
     ) {
         composable<TutoriasDestination> {
-            TutoriasScreen(role = role)
+            TutoriasScreen(
+                role = role,
+                onNavigateToChat = { chatId, otherName ->
+                    navController.navigate(ChatDetailDestination(chatId, otherName))
+                }
+            )
         }
         composable<ChatDestination> {
-            ChatScreen()
+            ChatScreen(
+                onChatClick = { chat ->
+                    val otherName = if (chat.tutorId == TokenManager.getUserId()) chat.studentName else chat.tutorName
+                    navController.navigate(ChatDetailDestination(chat.id, otherName))
+                }
+            )
+        }
+        composable<ChatDetailDestination> { backStackEntry ->
+            val args = backStackEntry.toRoute<ChatDetailDestination>()
+            ChatDetailScreen(
+                chatId = args.chatId,
+                otherUserName = args.otherUserName,
+                onBackClick = { navController.popBackStack() }
+            )
         }
         composable<PerfilDestination> {
+            val currentRole = if (TokenManager.getRole() == "TUTOR") UserRole.TUTOR else UserRole.ESTUDIANTE
             PerfilScreen(
+                role = currentRole,
                 onChangeRole = onChangeRole,
                 onLogout = onLogout
             )

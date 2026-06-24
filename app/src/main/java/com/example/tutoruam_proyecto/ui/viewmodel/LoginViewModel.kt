@@ -24,6 +24,13 @@ class LoginViewModel(
         }
     }
 
+    fun register(request: com.example.tutoruam_proyecto.ui.model.RegisterRequest) {
+        viewModelScope.launch {
+            _loginState.value = ApiResult.Loading
+            _loginState.value = authRepository.register(request)
+        }
+    }
+
     fun clearLoginState() {
         _loginState.value = null
     }

@@ -25,7 +25,11 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -45,6 +49,14 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.tutoruam_proyecto.ui.components.UamTextField
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.tutoruam_proyecto.ui.service.ApiResult
+import com.example.tutoruam_proyecto.ui.service.ServiceLocator
+import com.example.tutoruam_proyecto.ui.viewmodel.LoginViewModel
+import com.example.tutoruam_proyecto.ui.viewmodel.LoginViewModelFactory
+import com.example.tutoruam_proyecto.ui.model.RegisterRequest
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -53,15 +65,34 @@ fun RegisterScreen(
     onRegisterSuccess: () -> Unit,
     onNavigateToLogin: () -> Unit
 ) {
+    val viewModel: LoginViewModel = viewModel(
+        factory = LoginViewModelFactory(ServiceLocator.authRepository)
+    )
+    val loginState by viewModel.loginState.collectAsState()
     val scope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
     var name by remember { mutableStateOf("") }
     var cif by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var selectedRole by remember { mutableStateOf("ESTUDIANTE") }
     var errorMessage by remember { mutableStateOf("") }
-    var loading by remember { mutableStateOf(false) }
     var showPassword by remember { mutableStateOf(false) }
+    val loading = loginState is ApiResult.Loading
+
+    LaunchedEffect(loginState) {
+        when (val state = loginState) {
+            is ApiResult.Success -> {
+                viewModel.clearLoginState()
+                onRegisterSuccess()
+            }
+            is ApiResult.Error -> {
+                errorMessage = state.message ?: "Error inesperado"
+                viewModel.clearLoginState()
+            }
+            else -> Unit
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -92,6 +123,37 @@ fun RegisterScreen(
                     AuthHeader(
                         subtitle = "Crea tu cuenta universitaria"
                     )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = "Registrarse como:",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.align(Alignment.Start)
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = selectedRole == "ESTUDIANTE",
+                            onClick = { selectedRole = "ESTUDIANTE" }
+                        )
+                        Text(
+                            text = "Estudiante",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        RadioButton(
+                            selected = selectedRole == "TUTOR",
+                            onClick = { selectedRole = "TUTOR" }
+                        )
+                        Text(
+                            text = "Tutor",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
 
                     Spacer(modifier = Modifier.height(32.dp))
 
@@ -160,6 +222,37 @@ fun RegisterScreen(
                         }
                     )
 
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = "Registrarse como:",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.align(Alignment.Start)
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = selectedRole == "ESTUDIANTE",
+                            onClick = { selectedRole = "ESTUDIANTE" }
+                        )
+                        Text(
+                            text = "Estudiante",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        RadioButton(
+                            selected = selectedRole == "TUTOR",
+                            onClick = { selectedRole = "TUTOR" }
+                        )
+                        Text(
+                            text = "Tutor",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+
                     Spacer(modifier = Modifier.height(32.dp))
 
                     Button(
@@ -176,12 +269,15 @@ fun RegisterScreen(
                                 }
                                 else -> {
                                     errorMessage = ""
-                                    scope.launch {
-                                        loading = true
-                                        delay(800)
-                                        loading = false
-                                        onRegisterSuccess()
-                                    }
+                                    viewModel.register(
+                                        RegisterRequest(
+                                            name = name,
+                                            cif = cif,
+                                            email = email,
+                                            password = password,
+                                            role = selectedRole
+                                        )
+                                    )
                                 }
                             }
                         },

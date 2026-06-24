@@ -25,3 +25,6 @@ object ChatDestination
 @Serializable
 object PerfilDestination
 
+@Serializable
+data class ChatDetailDestination(val chatId: Long, val otherUserName: String)
+

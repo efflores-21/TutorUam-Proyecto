@@ -1,35 +1,46 @@
 package com.example.tutoruam_proyecto.ui.service
 
-import com.example.tutoruam_proyecto.ui.model.LoginRequest
-import com.example.tutoruam_proyecto.ui.model.LoginResponse
-import com.example.tutoruam_proyecto.ui.model.RegisterRequest
-import com.example.tutoruam_proyecto.ui.model.TutorResponse
+import com.example.tutoruam_proyecto.ui.model.*
 import retrofit2.Response
-import retrofit2.http.Body
-import retrofit2.http.GET
-import retrofit2.http.POST
-import retrofit2.http.Path
-import retrofit2.http.Query
+import retrofit2.http.*
 
 interface ApiService {
 
     @POST("auth/login")
-    suspend fun login(
-        @Body request: LoginRequest
-    ): Response<LoginResponse>
+    suspend fun login(@Body request: LoginRequest): Response<LoginResponse>
 
     @POST("auth/register")
-    suspend fun register(
-        @Body request: RegisterRequest
-    ): Response<LoginResponse>
+    suspend fun register(@Body request: RegisterRequest): Response<LoginResponse>
 
-    @GET("tutors")
-    suspend fun getTutors(
-        @Query("subject") subject: String? = null
-    ): Response<List<TutorResponse>>
+    // Clases y Solicitudes
+    @GET("classes")
+    suspend fun getClasses(@Query("subject") subject: String? = null): Response<List<TutorClass>>
 
-    @GET("tutors/{id}")
-    suspend fun getTutorById(
-        @Path("id") tutorId: Int
-    ): Response<TutorResponse>
+    @POST("classes")
+    suspend fun createClass(@Body request: CreateClassRequest): Response<TutorClass>
+
+    @POST("classes/{id}/join")
+    suspend fun joinClass(@Path("id") classId: Long): Response<Unit>
+
+    @GET("requests")
+    suspend fun getRequests(@Query("subject") subject: String? = null): Response<List<TutorClass>>
+
+    @POST("requests")
+    suspend fun createRequest(@Body request: CreateClassRequest): Response<TutorClass>
+
+    // Chats
+    @GET("chats")
+    suspend fun getChats(): Response<List<Chat>>
+
+    @GET("chats/{chatId}/messages")
+    suspend fun getMessages(
+        @Path("chatId") chatId: Long,
+        @Query("since") since: String? = null
+    ): Response<List<Message>>
+
+    @POST("chats/{chatId}/messages")
+    suspend fun sendMessage(
+        @Path("chatId") chatId: Long,
+        @Body request: SendMessageRequest
+    ): Response<Message>
 }

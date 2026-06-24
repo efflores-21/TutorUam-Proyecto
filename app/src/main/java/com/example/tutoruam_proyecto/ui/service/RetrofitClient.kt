@@ -9,8 +9,8 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
 
-  // Cambia esta URL cuando tengas la API Java lista
-    private const val BASE_URL = "https://tu-api.com/api/v1/"
+    // Usamos la IP especial de Android para localhost: 10.0.2.2
+    private const val BASE_URL = "http://10.0.2.2:8080/api/v1/"
     private const val TIMEOUT = 30L
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {

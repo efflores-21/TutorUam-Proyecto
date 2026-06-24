@@ -18,10 +18,11 @@ import com.example.tutoruam_proyecto.ui.screen.LoginScreen
 import com.example.tutoruam_proyecto.ui.screen.RegisterScreen
 import com.example.tutoruam_proyecto.ui.screen.RoleSelectionScreen
 
+import com.example.tutoruam_proyecto.ui.service.TokenManager
+
 @Composable
 fun AppNavigation(modifier: Modifier = Modifier) {
     val navController = rememberNavController()
-    var selectedRole by rememberSaveable { mutableStateOf(UserRole.ESTUDIANTE) }
 
     NavHost(
         navController = navController,
@@ -31,7 +32,7 @@ fun AppNavigation(modifier: Modifier = Modifier) {
         composable<LoginDestination> {
             LoginScreen(
                 onLoginSuccess = {
-                    navController.navigate(RoleSelectionDestination) {
+                    navController.navigate(HomeDestination) {
                         popUpTo(LoginDestination) { inclusive = true }
                     }
                 },
@@ -44,7 +45,7 @@ fun AppNavigation(modifier: Modifier = Modifier) {
         composable<RegisterDestination> {
             RegisterScreen(
                 onRegisterSuccess = {
-                    navController.navigate(RoleSelectionDestination) {
+                    navController.navigate(HomeDestination) {
                         popUpTo(LoginDestination) { inclusive = true }
                     }
                 },
@@ -54,25 +55,16 @@ fun AppNavigation(modifier: Modifier = Modifier) {
             )
         }
 
-        composable<RoleSelectionDestination> {
-            RoleSelectionScreen(
-                onRoleSelected = { role ->
-                    selectedRole = role
-                    navController.navigate(HomeDestination) {
-                        popUpTo(RoleSelectionDestination) { inclusive = true }
-                    }
-                }
-            )
-        }
-
         composable<HomeDestination> {
+            val role = if (TokenManager.getRole() == "TUTOR") UserRole.TUTOR else UserRole.ESTUDIANTE
             HomeScreen(
                 modifier = Modifier.fillMaxSize(),
-                role = selectedRole,
+                role = role,
                 onChangeRole = {
-                    navController.navigate(RoleSelectionDestination)
+                    // Si quieres permitir cambiar de rol, podrías navegar a una pantalla de perfil o similar
                 },
                 onLogout = {
+                    TokenManager.clear()
                     navController.navigate(LoginDestination) {
                         popUpTo(HomeDestination) { inclusive = true }
                     }

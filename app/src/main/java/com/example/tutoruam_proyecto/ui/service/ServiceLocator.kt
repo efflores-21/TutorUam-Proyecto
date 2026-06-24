@@ -1,9 +1,6 @@
 package com.example.tutoruam_proyecto.ui.service
 
-import com.example.tutoruam_proyecto.ui.repository.AuthRepository
-import com.example.tutoruam_proyecto.ui.repository.AuthRepositoryImpl
-import com.example.tutoruam_proyecto.ui.repository.TutorRepository
-import com.example.tutoruam_proyecto.ui.repository.TutorRepositoryImpl
+import com.example.tutoruam_proyecto.ui.repository.*
 
 object ServiceLocator {
 
@@ -15,7 +12,11 @@ object ServiceLocator {
         AuthRepositoryImpl(apiService)
     }
 
-    val tutorRepository: TutorRepository by lazy {
-        TutorRepositoryImpl(apiService)
+    val chatRepository: ChatRepository by lazy {
+        ChatRepositoryImpl(apiService)
+    }
+
+    val tutoriasRepository: TutoriasRepository by lazy {
+        TutoriasRepositoryImpl(apiService)
     }
 }

@@ -1,70 +1,67 @@
 package com.example.tutoruam_proyecto.ui.screen
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Book
-import androidx.compose.material.icons.rounded.Code
-import androidx.compose.material.icons.rounded.Notifications
-import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Book
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.rounded.School
-import androidx.compose.material.icons.rounded.Search
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.tutoruam_proyecto.ui.model.TutorClass
 import com.example.tutoruam_proyecto.ui.model.UserRole
+import com.example.tutoruam_proyecto.ui.service.ApiResult
+import com.example.tutoruam_proyecto.ui.service.ServiceLocator
+import com.example.tutoruam_proyecto.ui.viewmodel.TutoriasViewModel
+import com.example.tutoruam_proyecto.ui.viewmodel.TutoriasViewModelFactory
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TutoriasScreen(role: UserRole) {
+fun TutoriasScreen(
+    role: UserRole,
+    onNavigateToChat: (Long, String) -> Unit = { _, _ -> }
+) {
+    val viewModel: TutoriasViewModel = viewModel(
+        factory = TutoriasViewModelFactory(ServiceLocator.tutoriasRepository, role)
+    )
+    val itemsState by viewModel.itemsState.collectAsState()
+    val actionState by viewModel.actionState.collectAsState()
+    
     var searchQuery by remember { mutableStateOf("") }
-    var selectedCategory by remember { mutableStateOf("Todos") }
+    var showForm by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
 
-    val categories = listOf("Todos", "Matemáticas", "Programación", "Física", "Cálculo")
+    LaunchedEffect(actionState) {
+        when (val state = actionState) {
+            is ApiResult.Success -> {
+                snackbarHostState.showSnackbar("Operación exitosa")
+                viewModel.clearActionState()
+            }
+            is ApiResult.Error -> {
+                snackbarHostState.showSnackbar(state.message ?: "Error al procesar")
+                viewModel.clearActionState()
+            }
+            else -> Unit
+        }
+    }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
@@ -94,154 +91,141 @@ fun TutoriasScreen(role: UserRole) {
                         )
                     }
                 },
-                actions = {
-                    IconButton(onClick = {}) {
-                        Icon(
-                            Icons.Rounded.Notifications,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
+        },
+        floatingActionButton = {
+            ExtendedFloatingActionButton(
+                onClick = { showForm = true },
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = Color.White,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.padding(bottom = 16.dp)
+            ) {
+                Icon(imageVector = Icons.Default.Add, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = if (role == UserRole.TUTOR) "Ofrecer ayuda" else "Pedir ayuda",
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
+                .background(Color(0xFFF8F9FB))
                 .padding(innerPadding)
+                .padding(horizontal = 20.dp)
         ) {
-            Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
-                Text(
-                    text = if (role == UserRole.TUTOR) "Hola, Carlos" else "Hola, Alejandro",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = if (role == UserRole.TUTOR) "¿A quién quieres ayudar hoy?" else "¿Qué quieres aprender hoy?",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = if (role == UserRole.TUTOR) "Hola, Tutor" else "Hola, Estudiante",
+                style = MaterialTheme.typography.displayLarge.copy(fontSize = 24.sp),
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = if (role == UserRole.TUTOR) "¿A quién quieres ayudar hoy?" else "¿Qué quieres aprender hoy?",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedTextField(
                 value = searchQuery,
-                onValueChange = { searchQuery = it },
-                placeholder = {
-                    Text("Buscar solicitudes o materias...", style = MaterialTheme.typography.bodyMedium)
+                onValueChange = { 
+                    searchQuery = it
+                    viewModel.loadData(it.takeIf { it.isNotBlank() })
                 },
-                leadingIcon = {
-                    Icon(Icons.Rounded.Search, contentDescription = null, tint = MaterialTheme.colorScheme.outline)
-                },
-                shape = RoundedCornerShape(16.dp),
+                placeholder = { Text("Buscar por materia...", style = MaterialTheme.typography.bodyMedium) },
+                leadingIcon = { Icon(imageVector = Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.outline) },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primaryContainer,
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = Color.Transparent,
-                    focusedContainerColor = Color(0xFFECEFF3),
-                    unfocusedContainerColor = Color(0xFFECEFF3)
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow
                 ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
                 singleLine = true
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            LazyRow(
-                contentPadding = PaddingValues(horizontal = 20.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                items(categories) { category ->
-                    val isSelected = category == selectedCategory
-                    FilterChip(
-                        selected = isSelected,
-                        onClick = { selectedCategory = category },
-                        label = { Text(category, fontWeight = FontWeight.SemiBold) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                            selectedLabelColor = Color.White,
-                            containerColor = Color(0xFFECEFF3),
-                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant
-                        ),
-                        border = FilterChipDefaults.filterChipBorder(
-                            enabled = true,
-                            selected = isSelected,
-                            borderColor = Color.Transparent,
-                            selectedBorderColor = Color.Transparent
-                        ),
-                        shape = RoundedCornerShape(50)
-                    )
+            when (val state = itemsState) {
+                is ApiResult.Loading -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
                 }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            LazyColumn(
-                contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 96.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight()
-            ) {
-                item {
-                    TutoriaFeedCard(
-                        studentName = "María Rodríguez",
-                        subject = "Cálculo Diferencial",
-                        subjectIcon = Icons.Rounded.Book,
-                        timeBadge = "HOY 15:30",
-                        isEmergency = true,
-                        comment = "\"Necesito ayuda con derivadas e integrales para el examen parcial de mañana. Especialmente con la regla de la cadena.\"",
-                        buttonText = if (role == UserRole.TUTOR) "Ofrecer ayuda" else "Unirse a la sesión"
-                    )
+                is ApiResult.Error -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(text = state.message ?: "Error al cargar datos")
+                    }
                 }
-                item {
-                    TutoriaFeedCard(
-                        studentName = "José Perales",
-                        subject = "Programación II",
-                        subjectIcon = Icons.Rounded.Code,
-                        timeBadge = "Mañana 10:00",
-                        isEmergency = false,
-                        comment = "\"No logro entender bien el concepto de recursividad en Java. Tengo un ejercicio que no compila.\"",
-                        buttonText = if (role == UserRole.TUTOR) "Ofrecer ayuda" else "Agendar cupo"
-                    )
+                is ApiResult.Success -> {
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        contentPadding = PaddingValues(bottom = 80.dp),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        items(state.data) { item ->
+                            TutorClassCard(
+                                item = item,
+                                role = role,
+                                onActionClick = {
+                                    if (role == UserRole.ESTUDIANTE) {
+                                        viewModel.joinClass(item.id)
+                                    } else {
+                                        // Tutor clicks on a request to offer help -> open chat or similar
+                                        // For now, let's assume it joins/accepts
+                                        viewModel.joinClass(item.id)
+                                    }
+                                }
+                            )
+                        }
+                    }
                 }
             }
         }
     }
+
+    if (showForm) {
+        PostFormDialog(
+            role = role,
+            onDismiss = { showForm = false },
+            onPost = { subject, time, desc, max ->
+                viewModel.createPost(subject, time, desc, max)
+                showForm = false
+            }
+        )
+    }
 }
 
 @Composable
-fun TutoriaFeedCard(
-    studentName: String,
-    subject: String,
-    subjectIcon: ImageVector,
-    timeBadge: String,
-    isEmergency: Boolean,
-    comment: String,
-    buttonText: String
+fun TutorClassCard(
+    item: TutorClass,
+    role: UserRole,
+    onActionClick: () -> Unit
 ) {
     Card(
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        modifier = Modifier
-            .fillMaxWidth()
-            .shadow(
-                elevation = 6.dp,
-                shape = RoundedCornerShape(24.dp),
-                ambientColor = Color(0x0F005DA4)
-            )
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.Top
             ) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -250,21 +234,20 @@ fun TutoriaFeedCard(
                     Box(
                         modifier = Modifier
                             .size(48.dp)
-                            .background(Color(0xFFDBE4EB), CircleShape),
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.secondaryContainer),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            studentName.first().toString(),
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontSize = 18.sp
+                            text = item.creatorName.firstOrNull()?.toString() ?: "?",
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
-
                     Column {
                         Text(
-                            studentName,
-                            style = MaterialTheme.typography.headlineSmall,
+                            text = item.creatorName,
+                            style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
                         Row(
@@ -272,75 +255,145 @@ fun TutoriaFeedCard(
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             Icon(
-                                subjectIcon,
+                                imageVector = Icons.Default.Book,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(14.dp)
                             )
                             Text(
-                                subject,
+                                text = item.subject,
                                 style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            modifier = Modifier.padding(top = 4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Schedule, 
+                                contentDescription = null, 
+                                modifier = Modifier.size(12.dp), 
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = item.time,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
                 }
-
-                Surface(
-                    color = if (isEmergency) MaterialTheme.colorScheme.errorContainer
-                    else MaterialTheme.colorScheme.secondaryContainer,
-                    shape = RoundedCornerShape(50)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Icon(
-                            Icons.Rounded.Schedule,
-                            contentDescription = null,
-                            tint = if (isEmergency) MaterialTheme.colorScheme.onErrorContainer
-                            else MaterialTheme.colorScheme.onSecondaryContainer,
-                            modifier = Modifier.size(14.dp)
-                        )
-                        Text(
-                            timeBadge,
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = if (isEmergency) MaterialTheme.colorScheme.onErrorContainer
-                            else MaterialTheme.colorScheme.onSecondaryContainer
-                        )
+                
+                if (item.maxStudents > 1) {
+                    Badge(containerColor = MaterialTheme.colorScheme.primaryContainer) {
+                        Text("Cupos: ${item.currentStudents}/${item.maxStudents}")
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
             Text(
-                text = comment,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.fillMaxWidth()
+                text = "\"" + item.description + "\"",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
             Button(
-                onClick = {},
+                onClick = onActionClick,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp),
-                shape = RoundedCornerShape(50),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
-                )
+                shape = RoundedCornerShape(99.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
                 Text(
-                    buttonText,
+                    text = if (role == UserRole.TUTOR) "Ofrecer ayuda" else "Unirse a clase",
                     style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.Bold
                 )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PostFormDialog(
+    role: UserRole,
+    onDismiss: () -> Unit,
+    onPost: (String, String, String, Int) -> Unit
+) {
+    var subject by remember { mutableStateOf("") }
+    var time by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+    var maxStudents by remember { mutableStateOf("1") }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            shape = RoundedCornerShape(24.dp),
+            modifier = Modifier.fillMaxWidth().padding(16.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    text = if (role == UserRole.TUTOR) "Ofrecer Tutoría" else "Solicitar Ayuda",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
+                )
+
+                OutlinedTextField(
+                    value = subject,
+                    onValueChange = { subject = it },
+                    label = { Text("Materia") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = time,
+                    onValueChange = { time = it },
+                    label = { Text("Hora (ej. 15:30)") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                if (role == UserRole.TUTOR) {
+                    OutlinedTextField(
+                        value = maxStudents,
+                        onValueChange = { maxStudents = it },
+                        label = { Text("Cantidad de estudiantes") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Descripción") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 3
+                )
+
+                Button(
+                    onClick = {
+                        onPost(
+                            subject,
+                            time,
+                            description,
+                            maxStudents.toIntOrNull() ?: 1
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(50)
+                ) {
+                    Text("Publicar")
+                }
             }
         }
     }

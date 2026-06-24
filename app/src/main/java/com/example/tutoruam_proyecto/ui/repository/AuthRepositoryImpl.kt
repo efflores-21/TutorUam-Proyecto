@@ -33,7 +33,13 @@ class AuthRepositoryImpl(
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) {
-                    body.token?.let(TokenManager::saveToken)
+                    TokenManager.saveUser(
+                        token = body.token,
+                        userId = body.userId,
+                        name = body.name,
+                        email = body.email,
+                        role = body.role
+                    )
                     ApiResult.Success(body)
                 } else {
                     ApiResult.Error(message = "Respuesta vacía del servidor")
