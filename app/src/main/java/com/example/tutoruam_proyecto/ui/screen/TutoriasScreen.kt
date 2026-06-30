@@ -22,6 +22,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import java.util.Calendar
+import java.text.SimpleDateFormat
+import java.util.Locale
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tutoruam_proyecto.ui.model.TutorClass
 import com.example.tutoruam_proyecto.ui.model.UserRole
@@ -29,6 +32,7 @@ import com.example.tutoruam_proyecto.ui.service.ApiResult
 import com.example.tutoruam_proyecto.ui.service.ServiceLocator
 import com.example.tutoruam_proyecto.ui.viewmodel.TutoriasViewModel
 import com.example.tutoruam_proyecto.ui.viewmodel.TutoriasViewModelFactory
+import com.example.tutoruam_proyecto.ui.utils.DateUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,7 +41,11 @@ fun TutoriasScreen(
     onNavigateToChat: (Long, String) -> Unit = { _, _ -> }
 ) {
     val viewModel: TutoriasViewModel = viewModel(
-        factory = TutoriasViewModelFactory(ServiceLocator.tutoriasRepository, role)
+        factory = TutoriasViewModelFactory(
+            ServiceLocator.tutoriasRepository,
+            ServiceLocator.chatRepository,
+            role
+        )
     )
     val itemsState by viewModel.itemsState.collectAsState()
     val actionState by viewModel.actionState.collectAsState()
@@ -49,7 +57,12 @@ fun TutoriasScreen(
     LaunchedEffect(actionState) {
         when (val state = actionState) {
             is ApiResult.Success -> {
-                snackbarHostState.showSnackbar("Operación exitosa")
+                if (state.data is Pair<*, *>) {
+                    val data = state.data as Pair<Long, String>
+                    onNavigateToChat(data.first, data.second)
+                } else {
+                    snackbarHostState.showSnackbar("Operación exitosa")
+                }
                 viewModel.clearActionState()
             }
             is ApiResult.Error -> {
@@ -100,6 +113,7 @@ fun TutoriasScreen(
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = Color.White,
                 shape = RoundedCornerShape(16.dp),
+                // 🔥 IMPORTANTE: Este padding evita que el FAB se superponga con la barra inferior
                 modifier = Modifier.padding(bottom = 16.dp)
             ) {
                 Icon(imageVector = Icons.Default.Add, contentDescription = null)
@@ -111,12 +125,14 @@ fun TutoriasScreen(
             }
         }
     ) { innerPadding ->
+        // 🔥 El padding innerPadding ya incluye el espacio de la barra inferior.
+        // No debemos añadir más padding inferior a la lista, o se duplicará.
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color(0xFFF8F9FB))
-                .padding(innerPadding)
-                .padding(horizontal = 20.dp)
+                .padding(innerPadding)   // Padding del Scaffold
+                .padding(horizontal = 20.dp) // Padding lateral
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -169,7 +185,7 @@ fun TutoriasScreen(
                 is ApiResult.Success -> {
                     LazyColumn(
                         verticalArrangement = Arrangement.spacedBy(16.dp),
-                        contentPadding = PaddingValues(bottom = 80.dp),
+                        // 🔥 Quitamos contentPadding para evitar el doble espacio con el padding del contenedor
                         modifier = Modifier.fillMaxSize()
                     ) {
                         items(state.data) { item ->
@@ -178,11 +194,9 @@ fun TutoriasScreen(
                                 role = role,
                                 onActionClick = {
                                     if (role == UserRole.ESTUDIANTE) {
-                                        viewModel.joinClass(item.id)
+                                        viewModel.joinClass(item.id, item.creatorName, item.creatorId)
                                     } else {
-                                        // Tutor clicks on a request to offer help -> open chat or similar
-                                        // For now, let's assume it joins/accepts
-                                        viewModel.joinClass(item.id)
+                                        viewModel.joinClass(item.id, item.creatorName, item.creatorId)
                                     }
                                 }
                             )
@@ -217,105 +231,121 @@ fun TutorClassCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
+        Box(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
             ) {
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Top
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.secondaryContainer),
-                        contentAlignment = Alignment.Center
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = item.creatorName.firstOrNull()?.toString() ?: "?",
-                            style = MaterialTheme.typography.headlineSmall,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                    Column {
-                        Text(
-                            text = item.creatorName,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.secondaryContainer),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Book,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(14.dp)
-                            )
                             Text(
-                                text = item.subject,
-                                style = MaterialTheme.typography.labelMedium,
+                                text = item.creatorName.firstOrNull()?.toString() ?: "?",
+                                style = MaterialTheme.typography.headlineSmall,
                                 color = MaterialTheme.colorScheme.primary
                             )
                         }
-                        
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            modifier = Modifier.padding(top = 4.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Schedule, 
-                                contentDescription = null, 
-                                modifier = Modifier.size(12.dp), 
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                        Column {
                             Text(
-                                text = item.time,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                text = item.creatorName,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
                             )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Book,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Text(
+                                    text = item.subject,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            
+                            val displayTime = if (item.type == "CLASS") item.scheduledTime else item.timeLimit
+                            if (displayTime != null) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    modifier = Modifier.padding(top = 4.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Schedule, 
+                                        contentDescription = null, 
+                                        modifier = Modifier.size(12.dp), 
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Text(
+                                        text = DateUtils.formatDate(displayTime),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
                         }
                     }
                 }
-                
-                if (item.maxStudents > 1) {
-                    Badge(containerColor = MaterialTheme.colorScheme.primaryContainer) {
-                        Text("Cupos: ${item.currentStudents}/${item.maxStudents}")
-                    }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                Text(
+                    text = "\"" + item.description + "\"",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(
+                    onClick = onActionClick,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                    shape = RoundedCornerShape(99.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                ) {
+                    Text(
+                        text = if (item.type == "CLASS") {
+                            if (role == UserRole.TUTOR) "Ver clase" else "Unirse a clase"
+                        } else {
+                            if (role == UserRole.TUTOR) "Ofrecer ayuda" else "Ver solicitud"
+                        },
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
-
-            Text(
-                text = "\"" + item.description + "\"",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Button(
-                onClick = onActionClick,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp),
-                shape = RoundedCornerShape(99.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-            ) {
+            // Cupos en la esquina superior derecha
+            if (item.type == "CLASS" && item.maxStudents != null && item.maxStudents > 1) {
                 Text(
-                    text = if (role == UserRole.TUTOR) "Ofrecer ayuda" else "Unirse a clase",
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Bold
+                    text = "Cupos: ${item.currentStudents ?: 0}/${item.maxStudents}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.Black,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(16.dp)
                 )
             }
         }
@@ -333,6 +363,7 @@ fun PostFormDialog(
     var time by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var maxStudents by remember { mutableStateOf("1") }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -351,42 +382,100 @@ fun PostFormDialog(
 
                 OutlinedTextField(
                     value = subject,
-                    onValueChange = { subject = it },
+                    onValueChange = { subject = it; errorMessage = null },
                     label = { Text("Materia") },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = errorMessage != null && errorMessage!!.contains("materia")
                 )
 
                 OutlinedTextField(
                     value = time,
-                    onValueChange = { time = it },
+                    onValueChange = { time = it; errorMessage = null },
                     label = { Text("Hora (ej. 15:30)") },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = errorMessage != null && errorMessage!!.contains("hora"),
+                    placeholder = { Text("15:30") }
                 )
 
                 if (role == UserRole.TUTOR) {
                     OutlinedTextField(
                         value = maxStudents,
-                        onValueChange = { maxStudents = it },
+                        onValueChange = { maxStudents = it; errorMessage = null },
                         label = { Text("Cantidad de estudiantes") },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        isError = errorMessage != null && errorMessage!!.contains("estudiantes")
                     )
                 }
 
                 OutlinedTextField(
                     value = description,
-                    onValueChange = { description = it },
+                    onValueChange = { description = it; errorMessage = null },
                     label = { Text("Descripción") },
                     modifier = Modifier.fillMaxWidth(),
-                    minLines = 3
+                    minLines = 3,
+                    isError = errorMessage != null && errorMessage!!.contains("descripción")
                 )
+
+                if (errorMessage != null) {
+                    Text(
+                        text = errorMessage!!,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
 
                 Button(
                     onClick = {
+                        errorMessage = null
+
+                        if (subject.isBlank()) {
+                            errorMessage = "La materia es obligatoria"
+                            return@Button
+                        }
+                        if (time.isBlank()) {
+                            errorMessage = "La hora es obligatoria"
+                            return@Button
+                        }
+                        if (description.isBlank()) {
+                            errorMessage = "La descripción es obligatoria"
+                            return@Button
+                        }
+
+                        val formattedTime = try {
+                            val sdfInput = SimpleDateFormat("HH:mm", Locale.getDefault())
+                            val date = sdfInput.parse(time)
+                            val calendar = Calendar.getInstance()
+                            val now = Calendar.getInstance()
+                            calendar.time = date ?: throw Exception()
+                            
+                            now.set(Calendar.HOUR_OF_DAY, calendar.get(Calendar.HOUR_OF_DAY))
+                            now.set(Calendar.MINUTE, calendar.get(Calendar.MINUTE))
+                            now.set(Calendar.SECOND, 0)
+                            now.set(Calendar.MILLISECOND, 0)
+
+                            val sdfOutput = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+                            sdfOutput.format(now.time)
+                        } catch (e: Exception) {
+                            errorMessage = "Formato de hora inválido. Usa HH:mm (ej. 15:30)"
+                            return@Button
+                        }
+
+                        val max = if (role == UserRole.TUTOR) {
+                            maxStudents.toIntOrNull()
+                        } else {
+                            1
+                        }
+
+                        if (role == UserRole.TUTOR && (max == null || max <= 0)) {
+                            errorMessage = "La cantidad de estudiantes debe ser un número positivo"
+                            return@Button
+                        }
+
                         onPost(
                             subject,
-                            time,
+                            formattedTime,
                             description,
-                            maxStudents.toIntOrNull() ?: 1
+                            max ?: 1
                         )
                     },
                     modifier = Modifier.fillMaxWidth(),

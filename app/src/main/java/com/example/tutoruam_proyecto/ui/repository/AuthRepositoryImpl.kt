@@ -1,5 +1,6 @@
 package com.example.tutoruam_proyecto.ui.repository
 
+import android.util.Log
 import com.example.tutoruam_proyecto.ui.model.LoginRequest
 import com.example.tutoruam_proyecto.ui.model.LoginResponse
 import com.example.tutoruam_proyecto.ui.model.RegisterRequest
@@ -25,11 +26,37 @@ class AuthRepositoryImpl(
         }
     }
 
+    override suspend fun changeRole(newRole: String): ApiResult<Unit> {
+        return try {
+            val response = apiService.changeRole(newRole)
+            if (response.isSuccessful) {
+                // Actualizar el rol en el TokenManager si es necesario
+                TokenManager.saveUser(
+                    token = TokenManager.getToken() ?: "",
+                    userId = TokenManager.getUserId(),
+                    name = TokenManager.getName(),
+                    email = TokenManager.getEmail(),
+                    role = newRole
+                )
+                ApiResult.Success(Unit)
+            } else {
+                ApiResult.Error(
+                    code = response.code(),
+                    message = response.errorBody()?.string() ?: "Error al cambiar rol"
+                )
+            }
+        } catch (e: Exception) {
+            ApiResult.Error(message = e.message ?: "Error inesperado", exception = e)
+        }
+    }
+
     private suspend fun executeAuthRequest(
         request: suspend () -> Response<LoginResponse>
     ): ApiResult<LoginResponse> {
         return try {
+            Log.d("AuthRepo", "Enviando petición...")
             val response = request()
+            Log.d("AuthRepo", "Código: ${response.code()}")
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) {
@@ -51,8 +78,10 @@ class AuthRepositoryImpl(
                 )
             }
         } catch (e: IOException) {
+            Log.e("AuthRepo", "Error de red: ${e.message}", e)
             ApiResult.Error(message = "Sin conexión a internet", exception = e)
         } catch (e: Exception) {
+            Log.e("AuthRepo", "Error: ${e.message}", e)
             ApiResult.Error(message = e.message ?: "Error inesperado", exception = e)
         }
     }

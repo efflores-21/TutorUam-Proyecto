@@ -1,5 +1,6 @@
 package com.example.tutoruam_proyecto.ui.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tutoruam_proyecto.ui.model.LoginResponse
@@ -19,8 +20,11 @@ class LoginViewModel(
 
     fun login(email: String, password: String) {
         viewModelScope.launch {
+            Log.d("LoginVM", "Login iniciado")
             _loginState.value = ApiResult.Loading
-            _loginState.value = authRepository.login(email, password)
+            val result = authRepository.login(email, password)
+            Log.d("LoginVM", "Resultado: $result")
+            _loginState.value = result
         }
     }
 

@@ -1,6 +1,9 @@
 package com.example.tutoruam_proyecto.ui.repository
 
+import android.util.Log
+import com.example.tutoruam_proyecto.ui.model.ClassSessionResponse
 import com.example.tutoruam_proyecto.ui.model.CreateClassRequest
+import com.example.tutoruam_proyecto.ui.model.HelpRequestResponse
 import com.example.tutoruam_proyecto.ui.model.TutorClass
 import com.example.tutoruam_proyecto.ui.service.ApiResult
 import com.example.tutoruam_proyecto.ui.service.ApiService
@@ -12,24 +15,96 @@ class TutoriasRepositoryImpl(
 ) : TutoriasRepository {
 
     override suspend fun getClasses(subject: String?): ApiResult<List<TutorClass>> {
-        return executeRequest { apiService.getClasses(subject) }
+        return try {
+            val response = apiService.getClasses(subject)
+            if (response.isSuccessful) {
+                val classes = response.body()?.map { it.toDomain() } ?: emptyList()
+                ApiResult.Success(classes)
+            } else {
+                ApiResult.Error(code = response.code(), message = response.errorBody()?.string() ?: "Error")
+            }
+        } catch (e: Exception) {
+            ApiResult.Error(message = e.message ?: "Error", exception = e)
+        }
     }
 
     override suspend fun createClass(request: CreateClassRequest): ApiResult<TutorClass> {
-        return executeRequest { apiService.createClass(request) }
+        Log.d("TutoriasRepo", "Creando clase: $request")
+        return try {
+            val response = apiService.createClass(request)
+            Log.d("TutoriasRepo", "Código: ${response.code()}")
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null) ApiResult.Success(body.toDomain())
+                else ApiResult.Error(message = "Respuesta vacía")
+            } else {
+                ApiResult.Error(code = response.code(), message = response.errorBody()?.string() ?: "Error")
+            }
+        } catch (e: Exception) {
+            Log.e("TutoriasRepo", "Error: ${e.message}", e)
+            ApiResult.Error(message = e.message ?: "Error", exception = e)
+        }
     }
 
     override suspend fun joinClass(classId: Long): ApiResult<Unit> {
+        Log.d("TutoriasRepo", "Uniéndose a clase: $classId")
         return executeRequest { apiService.joinClass(classId) }
     }
 
     override suspend fun getRequests(subject: String?): ApiResult<List<TutorClass>> {
-        return executeRequest { apiService.getRequests(subject) }
+        return try {
+            val response = apiService.getRequests(subject)
+            if (response.isSuccessful) {
+                val requests = response.body()?.map { it.toDomain() } ?: emptyList()
+                ApiResult.Success(requests)
+            } else {
+                ApiResult.Error(code = response.code(), message = response.errorBody()?.string() ?: "Error")
+            }
+        } catch (e: Exception) {
+            ApiResult.Error(message = e.message ?: "Error", exception = e)
+        }
     }
 
     override suspend fun createRequest(request: CreateClassRequest): ApiResult<TutorClass> {
-        return executeRequest { apiService.createRequest(request) }
+        Log.d("TutoriasRepo", "Creando solicitud: $request")
+        return try {
+            val response = apiService.createRequest(request)
+            Log.d("TutoriasRepo", "Código: ${response.code()}")
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null) ApiResult.Success(body.toDomain())
+                else ApiResult.Error(message = "Respuesta vacía")
+            } else {
+                ApiResult.Error(code = response.code(), message = response.errorBody()?.string() ?: "Error")
+            }
+        } catch (e: Exception) {
+            Log.e("TutoriasRepo", "Error: ${e.message}", e)
+            ApiResult.Error(message = e.message ?: "Error", exception = e)
+        }
     }
+
+    private fun com.example.tutoruam_proyecto.ui.model.ClassSessionResponse.toDomain() = TutorClass(
+        id = id,
+        creatorId = tutorId,
+        creatorName = tutorName,
+        subject = subject,
+        scheduledTime = scheduledTime,
+        description = description,
+        maxStudents = maxStudents,
+        currentStudents = currentStudents,
+        status = status,
+        type = "CLASS"
+    )
+
+    private fun com.example.tutoruam_proyecto.ui.model.HelpRequestResponse.toDomain() = TutorClass(
+        id = id,
+        creatorId = studentId,
+        creatorName = studentName,
+        subject = subject,
+        description = description,
+        timeLimit = timeLimit,
+        type = "REQUEST"
+    )
 
     private suspend fun <T> executeRequest(
         request: suspend () -> Response<T>
@@ -38,12 +113,11 @@ class TutoriasRepositoryImpl(
             val response = request()
             if (response.isSuccessful) {
                 val body = response.body()
-                if (body != null) ApiResult.Success(body)
-                else if (response.code() == 204 || response.code() == 200) {
-                     @Suppress("UNCHECKED_CAST")
-                     ApiResult.Success(Unit as T)
+                if (body != null) {
+                    ApiResult.Success(body)
                 } else {
-                    ApiResult.Error(message = "Respuesta vacía")
+                    @Suppress("UNCHECKED_CAST")
+                    ApiResult.Success(Unit as T)
                 }
             } else {
                 ApiResult.Error(

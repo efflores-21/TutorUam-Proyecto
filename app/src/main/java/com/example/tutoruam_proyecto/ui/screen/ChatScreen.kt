@@ -25,6 +25,7 @@ import com.example.tutoruam_proyecto.ui.service.ServiceLocator
 import com.example.tutoruam_proyecto.ui.service.TokenManager
 import com.example.tutoruam_proyecto.ui.viewmodel.ChatViewModel
 import com.example.tutoruam_proyecto.ui.viewmodel.ChatViewModelFactory
+import com.example.tutoruam_proyecto.ui.utils.DateUtils
 
 @Composable
 fun ChatScreen(
@@ -54,14 +55,14 @@ fun ChatScreen(
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
-                placeholder = { Text("Buscar conversaciones...") },
-                leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
-                shape = RoundedCornerShape(16.dp),
+                placeholder = { Text("Buscar conversaciones...", style = MaterialTheme.typography.bodyMedium) },
+                leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null, tint = MaterialTheme.colorScheme.outline) },
+                shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = Color.Transparent,
-                    focusedBorderColor = MaterialTheme.colorScheme.primaryContainer,
-                    focusedContainerColor = Color(0xFFECEFF3),
-                    unfocusedContainerColor = Color(0xFFECEFF3)
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow
                 ),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
@@ -103,7 +104,9 @@ fun ChatItemCard(chat: Chat, onClick: () -> Unit) {
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -114,26 +117,67 @@ fun ChatItemCard(chat: Chat, onClick: () -> Unit) {
                     .background(Color(0xFFE2E7ED), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Text(displayName.first().toString(), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, fontSize = 20.sp)
+                Text(
+                    displayName.firstOrNull()?.toString() ?: "?",
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontSize = 20.sp
+                )
             }
+            
             Column(modifier = Modifier.weight(1f)) {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(displayName, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                    Text(chat.lastMessageAt ?: "", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (chat.lastMessage != null) {
-                        Text(chat.lastMessage, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, modifier = Modifier.weight(1f))
-                    }
+                Text(
+                    displayName,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1 // 👈 Para que no se desborde
+                )
+                
+                // 👇 Ahora el mensaje y el contador están en una fila
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = chat.lastMessage ?: "Nuevo chat",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        modifier = Modifier.weight(1f) // Ocupa el espacio sobrante
+                    )
+                    
+                    // 👇 Contador de mensajes no leídos (en la esquina superior derecha)
                     if (chat.unreadCount > 0) {
-                        Surface(color = MaterialTheme.colorScheme.primaryContainer, shape = CircleShape, modifier = Modifier.size(20.dp)) {
+                        Surface(
+                            color = MaterialTheme.colorScheme.primary,
+                            shape = CircleShape,
+                            modifier = Modifier.size(24.dp)
+                        ) {
                             Box(contentAlignment = Alignment.Center) {
-                                Text(chat.unreadCount.toString(), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 10.sp)
+                                Text(
+                                    chat.unreadCount.toString(),
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                )
                             }
                         }
                     }
                 }
+            }
+            
+            // 👇 Fecha y hora en la columna derecha
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = if (chat.lastMessageAt != null) DateUtils.formatDate(chat.lastMessageAt) else "",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }

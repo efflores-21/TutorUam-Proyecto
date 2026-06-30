@@ -14,19 +14,19 @@ interface ApiService {
 
     // Clases y Solicitudes
     @GET("classes")
-    suspend fun getClasses(@Query("subject") subject: String? = null): Response<List<TutorClass>>
+    suspend fun getClasses(@Query("subject") subject: String? = null): Response<List<ClassSessionResponse>>
 
     @POST("classes")
-    suspend fun createClass(@Body request: CreateClassRequest): Response<TutorClass>
+    suspend fun createClass(@Body request: CreateClassRequest): Response<ClassSessionResponse>
 
     @POST("classes/{id}/join")
     suspend fun joinClass(@Path("id") classId: Long): Response<Unit>
 
     @GET("requests")
-    suspend fun getRequests(@Query("subject") subject: String? = null): Response<List<TutorClass>>
+    suspend fun getRequests(@Query("subject") subject: String? = null): Response<List<HelpRequestResponse>>
 
     @POST("requests")
-    suspend fun createRequest(@Body request: CreateClassRequest): Response<TutorClass>
+    suspend fun createRequest(@Body request: CreateClassRequest): Response<HelpRequestResponse>
 
     // Chats
     @GET("chats")
@@ -43,4 +43,7 @@ interface ApiService {
         @Path("chatId") chatId: Long,
         @Body request: SendMessageRequest
     ): Response<Message>
+
+    @POST("users/me/role")
+    suspend fun changeRole(@Query("newRole") newRole: String): Response<Unit>
 }

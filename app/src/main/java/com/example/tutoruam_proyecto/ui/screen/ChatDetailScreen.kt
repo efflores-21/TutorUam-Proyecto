@@ -16,7 +16,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tutoruam_proyecto.ui.model.Message
 import com.example.tutoruam_proyecto.ui.service.ApiResult
@@ -24,6 +23,7 @@ import com.example.tutoruam_proyecto.ui.service.ServiceLocator
 import com.example.tutoruam_proyecto.ui.service.TokenManager
 import com.example.tutoruam_proyecto.ui.viewmodel.ChatViewModel
 import com.example.tutoruam_proyecto.ui.viewmodel.ChatViewModelFactory
+import com.example.tutoruam_proyecto.ui.utils.DateUtils
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -39,12 +39,9 @@ fun ChatDetailScreen(
     val sendState by viewModel.sendMessageState.collectAsState()
     val listState = rememberLazyListState()
 
-    LaunchedEffect(chatId) {
-        viewModel.loadMessages(chatId)
-        while (true) {
-            delay(3000)
-            viewModel.loadMessages(chatId)
-        }
+    DisposableEffect(chatId) {
+        val job = viewModel.startPolling(chatId)
+        onDispose { job.cancel() }
     }
 
     LaunchedEffect(sendState) {
@@ -128,6 +125,9 @@ fun ChatDetailScreen(
 
 @Composable
 fun MessageBubble(message: Message, isMine: Boolean) {
+    // 👇 Formato de hora para mensajes usando DateUtils para compatibilidad con API 24
+    val formattedTime = DateUtils.formatTime(message.sentAt)
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = if (isMine) Arrangement.End else Arrangement.Start
@@ -149,7 +149,7 @@ fun MessageBubble(message: Message, isMine: Boolean) {
                     color = if (isMine) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    text = message.sentAt,
+                    text = formattedTime,
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                     modifier = Modifier.align(Alignment.End)

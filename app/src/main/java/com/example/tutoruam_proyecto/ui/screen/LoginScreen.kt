@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.sp
 import com.example.tutoruam_proyecto.ui.components.UamTextField
 import com.example.tutoruam_proyecto.ui.service.ApiResult
 import com.example.tutoruam_proyecto.ui.service.ServiceLocator
+import com.example.tutoruam_proyecto.ui.service.TokenManager
 import com.example.tutoruam_proyecto.ui.viewmodel.LoginViewModel
 import com.example.tutoruam_proyecto.ui.viewmodel.LoginViewModelFactory
 
@@ -68,6 +69,10 @@ fun LoginScreen(
     var errorMessage by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
     val loading = loginState is ApiResult.Loading
+
+    LaunchedEffect(Unit) {
+        TokenManager.clear() // 🔥 Limpia sesión anterior al abrir login
+    }
 
     LaunchedEffect(loginState) {
         when (val state = loginState) {

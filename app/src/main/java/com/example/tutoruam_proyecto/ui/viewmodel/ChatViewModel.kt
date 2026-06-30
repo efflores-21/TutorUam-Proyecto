@@ -6,6 +6,8 @@ import com.example.tutoruam_proyecto.ui.model.Chat
 import com.example.tutoruam_proyecto.ui.model.Message
 import com.example.tutoruam_proyecto.ui.repository.ChatRepository
 import com.example.tutoruam_proyecto.ui.service.ApiResult
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -55,5 +57,17 @@ class ChatViewModel(
 
     fun clearSendState() {
         _sendMessageState.value = null
+    }
+
+    fun startPolling(chatId: Long): Job {
+        return viewModelScope.launch {
+            while (true) {
+                val result = chatRepository.getMessages(chatId)
+                if (result is ApiResult.Success) {
+                    _messagesState.value = result
+                }
+                delay(3000)
+            }
+        }
     }
 }

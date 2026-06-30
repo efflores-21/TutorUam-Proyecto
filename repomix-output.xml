@@ -48,23 +48,28 @@ app/src/androidTest/java/com/example/tutoruam_proyecto/ExampleInstrumentedTest.k
 app/src/main/AndroidManifest.xml
 app/src/main/java/com/example/tutoruam_proyecto/MainActivity.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/components/UamTextField.kt
+app/src/main/java/com/example/tutoruam_proyecto/ui/model/Chat.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/model/LoginRequest.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/model/LoginResponse.kt
+app/src/main/java/com/example/tutoruam_proyecto/ui/model/Message.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/model/RegisterRequest.kt
+app/src/main/java/com/example/tutoruam_proyecto/ui/model/TutorClass.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/model/TutorResponse.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/model/UserRole.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/navigation/AppNavigation.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/navigation/Navigation.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/repository/AuthRepository.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/repository/AuthRepositoryImpl.kt
-app/src/main/java/com/example/tutoruam_proyecto/ui/repository/TutorRepository.kt
-app/src/main/java/com/example/tutoruam_proyecto/ui/repository/TutorRepositoryImpl.kt
+app/src/main/java/com/example/tutoruam_proyecto/ui/repository/ChatRepository.kt
+app/src/main/java/com/example/tutoruam_proyecto/ui/repository/ChatRepositoryImpl.kt
+app/src/main/java/com/example/tutoruam_proyecto/ui/repository/TutoriasRepository.kt
+app/src/main/java/com/example/tutoruam_proyecto/ui/repository/TutoriasRepositoryImpl.kt
+app/src/main/java/com/example/tutoruam_proyecto/ui/screen/ChatDetailScreen.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/screen/ChatScreen.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/screen/HomeScreen.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/screen/LoginScreen.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/screen/PerfilScreen.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/screen/RegisterScreen.kt
-app/src/main/java/com/example/tutoruam_proyecto/ui/screen/RoleSelectionScreen.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/screen/TutoriasScreen.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/service/ApiResult.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/service/ApiService.kt
@@ -74,8 +79,12 @@ app/src/main/java/com/example/tutoruam_proyecto/ui/service/TokenManager.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/theme/Color.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/theme/Theme.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/theme/Type.kt
+app/src/main/java/com/example/tutoruam_proyecto/ui/viewmodel/ChatViewModel.kt
+app/src/main/java/com/example/tutoruam_proyecto/ui/viewmodel/ChatViewModelFactory.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/viewmodel/LoginViewModel.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/viewmodel/LoginViewModelFactory.kt
+app/src/main/java/com/example/tutoruam_proyecto/ui/viewmodel/PerfilViewModel.kt
+app/src/main/java/com/example/tutoruam_proyecto/ui/viewmodel/TutoriasViewModel.kt
 app/src/main/res/drawable/ic_launcher_background.xml
 app/src/main/res/drawable/ic_launcher_foreground.xml
 app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
@@ -109,6 +118,50 @@ settings.gradle.kts
 
 <files>
 This section contains the contents of the repository's files.
+
+<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/viewmodel/PerfilViewModel.kt">
+package com.example.tutoruam_proyecto.ui.viewmodel
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
+import com.example.tutoruam_proyecto.ui.repository.AuthRepository
+import com.example.tutoruam_proyecto.ui.service.ApiResult
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+
+class PerfilViewModel(
+    private val repository: AuthRepository
+) : ViewModel() {
+
+    private val _uiState = MutableStateFlow<ApiResult<Unit>?>(null)
+    val uiState: StateFlow<ApiResult<Unit>?> = _uiState.asStateFlow()
+
+    fun changeRole(newRole: String) {
+        viewModelScope.launch {
+            _uiState.value = ApiResult.Loading
+            val result = repository.changeRole(newRole)
+            _uiState.value = result
+        }
+    }
+
+    fun clearState() {
+        _uiState.value = null
+    }
+}
+
+class PerfilViewModelFactory(private val repository: AuthRepository) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(PerfilViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return PerfilViewModel(repository) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
+    }
+}
+</file>
 
 <file path=".gitignore">
 *.iml
@@ -179,31 +232,6 @@ class ExampleInstrumentedTest {
         // Context of the app under test.
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
         assertEquals("com.example.tutoruam_proyecto", appContext.packageName)
-    }
-}
-</file>
-
-<file path="app/src/main/java/com/example/tutoruam_proyecto/MainActivity.kt">
-package com.example.tutoruam_proyecto
-
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.ui.Modifier
-import com.example.tutoruam_proyecto.ui.navigation.AppNavigation
-import com.example.tutoruam_proyecto.ui.theme.TutorUamProyectoTheme
-
-class MainActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent {
-            TutorUamProyectoTheme {
-                AppNavigation(modifier = Modifier.fillMaxSize())
-            }
-        }
     }
 }
 </file>
@@ -295,6 +323,21 @@ fun UamTextField(
 }
 </file>
 
+<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/model/Chat.kt">
+package com.example.tutoruam_proyecto.ui.model
+
+data class Chat(
+    val id: Long,
+    val tutorId: Long,
+    val tutorName: String,
+    val studentId: Long,
+    val studentName: String,
+    val lastMessage: String?,
+    val lastMessageAt: String?,
+    val unreadCount: Int
+)
+</file>
+
 <file path="app/src/main/java/com/example/tutoruam_proyecto/ui/model/LoginRequest.kt">
 package com.example.tutoruam_proyecto.ui.model
 
@@ -304,25 +347,66 @@ data class LoginRequest(
 )
 </file>
 
-<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/model/LoginResponse.kt">
+<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/model/Message.kt">
 package com.example.tutoruam_proyecto.ui.model
 
-data class LoginResponse(
-    val token: String? = null,
-    val userId: Int? = null,
-    val name: String? = null,
-    val email: String? = null
+data class Message(
+    val id: Long,
+    val senderId: Long,
+    val senderName: String,
+    val content: String,
+    val sentAt: String,
+    val read: Boolean
+)
+
+data class SendMessageRequest(
+    val content: String
 )
 </file>
 
-<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/model/RegisterRequest.kt">
+<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/model/TutorClass.kt">
 package com.example.tutoruam_proyecto.ui.model
 
-data class RegisterRequest(
-    val name: String,
-    val cif: String,
-    val email: String,
-    val password: String
+data class TutorClass(
+    val id: Long,
+    val creatorId: Long,          // tutorId para clases, studentId para requests
+    val creatorName: String,      // tutorName o studentName
+    val subject: String,
+    val scheduledTime: String? = null, // para clases
+    val description: String,
+    val maxStudents: Int? = null,     // para clases
+    val currentStudents: Int? = null, // para clases
+    val status: String? = null,       // para clases
+    val timeLimit: String? = null,    // para requests
+    val type: String  // "CLASS" o "REQUEST"
+)
+
+data class ClassSessionResponse(
+    val id: Long,
+    val tutorId: Long,
+    val tutorName: String,
+    val subject: String,
+    val scheduledTime: String,
+    val description: String,
+    val maxStudents: Int,
+    val currentStudents: Int,
+    val status: String
+)
+
+data class HelpRequestResponse(
+    val id: Long,
+    val studentId: Long,
+    val studentName: String,
+    val subject: String,
+    val description: String,
+    val timeLimit: String? = null
+)
+
+data class CreateClassRequest(
+    val subject: String,
+    val scheduledTime: String,  // NOTA: se llama scheduledTime, no "time"
+    val description: String,
+    val maxStudents: Int
 )
 </file>
 
@@ -356,97 +440,198 @@ import com.example.tutoruam_proyecto.ui.service.ApiResult
 interface AuthRepository {
     suspend fun login(email: String, password: String): ApiResult<LoginResponse>
     suspend fun register(request: RegisterRequest): ApiResult<LoginResponse>
+    suspend fun changeRole(newRole: String): ApiResult<Unit>
 }
 </file>
 
-<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/repository/AuthRepositoryImpl.kt">
+<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/repository/ChatRepository.kt">
 package com.example.tutoruam_proyecto.ui.repository
 
-import com.example.tutoruam_proyecto.ui.model.LoginRequest
-import com.example.tutoruam_proyecto.ui.model.LoginResponse
-import com.example.tutoruam_proyecto.ui.model.RegisterRequest
+import com.example.tutoruam_proyecto.ui.model.Chat
+import com.example.tutoruam_proyecto.ui.model.Message
+import com.example.tutoruam_proyecto.ui.service.ApiResult
+
+interface ChatRepository {
+    suspend fun getChats(): ApiResult<List<Chat>>
+    suspend fun getMessages(chatId: Long, since: String? = null): ApiResult<List<Message>>
+    suspend fun sendMessage(chatId: Long, content: String): ApiResult<Message>
+}
+</file>
+
+<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/repository/ChatRepositoryImpl.kt">
+package com.example.tutoruam_proyecto.ui.repository
+
+import com.example.tutoruam_proyecto.ui.model.SendMessageRequest
+import com.example.tutoruam_proyecto.ui.model.Chat
+import com.example.tutoruam_proyecto.ui.model.Message
 import com.example.tutoruam_proyecto.ui.service.ApiResult
 import com.example.tutoruam_proyecto.ui.service.ApiService
-import com.example.tutoruam_proyecto.ui.service.TokenManager
 import java.io.IOException
-import retrofit2.Response
 
-class AuthRepositoryImpl(
+class ChatRepositoryImpl(
     private val apiService: ApiService
-) : AuthRepository {
+) : ChatRepository {
 
-    override suspend fun login(email: String, password: String): ApiResult<LoginResponse> {
-        return executeAuthRequest {
-            apiService.login(LoginRequest(email, password))
-        }
+    override suspend fun getChats(): ApiResult<List<Chat>> {
+        return executeRequest { apiService.getChats() }
     }
 
-    override suspend fun register(request: RegisterRequest): ApiResult<LoginResponse> {
-        return executeAuthRequest {
-            apiService.register(request)
-        }
+    override suspend fun getMessages(chatId: Long, since: String?): ApiResult<List<Message>> {
+        return executeRequest { apiService.getMessages(chatId, since) }
     }
 
-    private suspend fun executeAuthRequest(
-        request: suspend () -> Response<LoginResponse>
-    ): ApiResult<LoginResponse> {
+    override suspend fun sendMessage(chatId: Long, content: String): ApiResult<Message> {
+        return executeRequest { apiService.sendMessage(chatId, SendMessageRequest(content)) }
+    }
+
+    private suspend fun <T> executeRequest(
+        request: suspend () -> retrofit2.Response<T>
+    ): ApiResult<T> {
         return try {
             val response = request()
             if (response.isSuccessful) {
                 val body = response.body()
-                if (body != null) {
-                    body.token?.let(TokenManager::saveToken)
-                    ApiResult.Success(body)
-                } else {
-                    ApiResult.Error(message = "Respuesta vacía del servidor")
-                }
+                if (body != null) ApiResult.Success(body)
+                else ApiResult.Error(message = "Respuesta vacía")
             } else {
                 ApiResult.Error(
                     code = response.code(),
-                    message = response.errorBody()?.string() ?: "Error desconocido"
+                    message = response.errorBody()?.string() ?: "Error"
                 )
             }
         } catch (e: IOException) {
-            ApiResult.Error(message = "Sin conexión a internet", exception = e)
+            ApiResult.Error(message = "Sin conexión", exception = e)
         } catch (e: Exception) {
-            ApiResult.Error(message = e.message ?: "Error inesperado", exception = e)
+            ApiResult.Error(message = e.message ?: "Error", exception = e)
         }
     }
 }
 </file>
 
-<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/repository/TutorRepository.kt">
+<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/repository/TutoriasRepository.kt">
 package com.example.tutoruam_proyecto.ui.repository
 
-import com.example.tutoruam_proyecto.ui.model.TutorResponse
+import com.example.tutoruam_proyecto.ui.model.CreateClassRequest
+import com.example.tutoruam_proyecto.ui.model.TutorClass
 import com.example.tutoruam_proyecto.ui.service.ApiResult
 
-interface TutorRepository {
-    suspend fun getTutors(subject: String? = null): ApiResult<List<TutorResponse>>
-    suspend fun getTutorById(tutorId: Int): ApiResult<TutorResponse>
+interface TutoriasRepository {
+    suspend fun getClasses(subject: String? = null): ApiResult<List<TutorClass>>
+    suspend fun createClass(request: CreateClassRequest): ApiResult<TutorClass>
+    suspend fun joinClass(classId: Long): ApiResult<Unit>
+    suspend fun getRequests(subject: String? = null): ApiResult<List<TutorClass>>
+    suspend fun createRequest(request: CreateClassRequest): ApiResult<TutorClass>
 }
 </file>
 
-<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/repository/TutorRepositoryImpl.kt">
+<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/repository/TutoriasRepositoryImpl.kt">
 package com.example.tutoruam_proyecto.ui.repository
 
-import com.example.tutoruam_proyecto.ui.model.TutorResponse
+import android.util.Log
+import com.example.tutoruam_proyecto.ui.model.ClassSessionResponse
+import com.example.tutoruam_proyecto.ui.model.CreateClassRequest
+import com.example.tutoruam_proyecto.ui.model.HelpRequestResponse
+import com.example.tutoruam_proyecto.ui.model.TutorClass
 import com.example.tutoruam_proyecto.ui.service.ApiResult
 import com.example.tutoruam_proyecto.ui.service.ApiService
 import java.io.IOException
 import retrofit2.Response
 
-class TutorRepositoryImpl(
+class TutoriasRepositoryImpl(
     private val apiService: ApiService
-) : TutorRepository {
+) : TutoriasRepository {
 
-    override suspend fun getTutors(subject: String?): ApiResult<List<TutorResponse>> {
-        return executeRequest { apiService.getTutors(subject) }
+    override suspend fun getClasses(subject: String?): ApiResult<List<TutorClass>> {
+        return try {
+            val response = apiService.getClasses(subject)
+            if (response.isSuccessful) {
+                val classes = response.body()?.map { it.toDomain() } ?: emptyList()
+                ApiResult.Success(classes)
+            } else {
+                ApiResult.Error(code = response.code(), message = response.errorBody()?.string() ?: "Error")
+            }
+        } catch (e: Exception) {
+            ApiResult.Error(message = e.message ?: "Error", exception = e)
+        }
     }
 
-    override suspend fun getTutorById(tutorId: Int): ApiResult<TutorResponse> {
-        return executeRequest { apiService.getTutorById(tutorId) }
+    override suspend fun createClass(request: CreateClassRequest): ApiResult<TutorClass> {
+        Log.d("TutoriasRepo", "Creando clase: $request")
+        return try {
+            val response = apiService.createClass(request)
+            Log.d("TutoriasRepo", "Código: ${response.code()}")
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null) ApiResult.Success(body.toDomain())
+                else ApiResult.Error(message = "Respuesta vacía")
+            } else {
+                ApiResult.Error(code = response.code(), message = response.errorBody()?.string() ?: "Error")
+            }
+        } catch (e: Exception) {
+            Log.e("TutoriasRepo", "Error: ${e.message}", e)
+            ApiResult.Error(message = e.message ?: "Error", exception = e)
+        }
     }
+
+    override suspend fun joinClass(classId: Long): ApiResult<Unit> {
+        Log.d("TutoriasRepo", "Uniéndose a clase: $classId")
+        return executeRequest { apiService.joinClass(classId) }
+    }
+
+    override suspend fun getRequests(subject: String?): ApiResult<List<TutorClass>> {
+        return try {
+            val response = apiService.getRequests(subject)
+            if (response.isSuccessful) {
+                val requests = response.body()?.map { it.toDomain() } ?: emptyList()
+                ApiResult.Success(requests)
+            } else {
+                ApiResult.Error(code = response.code(), message = response.errorBody()?.string() ?: "Error")
+            }
+        } catch (e: Exception) {
+            ApiResult.Error(message = e.message ?: "Error", exception = e)
+        }
+    }
+
+    override suspend fun createRequest(request: CreateClassRequest): ApiResult<TutorClass> {
+        Log.d("TutoriasRepo", "Creando solicitud: $request")
+        return try {
+            val response = apiService.createRequest(request)
+            Log.d("TutoriasRepo", "Código: ${response.code()}")
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null) ApiResult.Success(body.toDomain())
+                else ApiResult.Error(message = "Respuesta vacía")
+            } else {
+                ApiResult.Error(code = response.code(), message = response.errorBody()?.string() ?: "Error")
+            }
+        } catch (e: Exception) {
+            Log.e("TutoriasRepo", "Error: ${e.message}", e)
+            ApiResult.Error(message = e.message ?: "Error", exception = e)
+        }
+    }
+
+    private fun com.example.tutoruam_proyecto.ui.model.ClassSessionResponse.toDomain() = TutorClass(
+        id = id,
+        creatorId = tutorId,
+        creatorName = tutorName,
+        subject = subject,
+        scheduledTime = scheduledTime,
+        description = description,
+        maxStudents = maxStudents,
+        currentStudents = currentStudents,
+        status = status,
+        type = "CLASS"
+    )
+
+    private fun com.example.tutoruam_proyecto.ui.model.HelpRequestResponse.toDomain() = TutorClass(
+        id = id,
+        creatorId = studentId,
+        creatorName = studentName,
+        subject = subject,
+        description = description,
+        timeLimit = timeLimit,
+        type = "REQUEST"
+    )
 
     private suspend fun <T> executeRequest(
         request: suspend () -> Response<T>
@@ -458,247 +643,192 @@ class TutorRepositoryImpl(
                 if (body != null) {
                     ApiResult.Success(body)
                 } else {
-                    ApiResult.Error(message = "Respuesta vacía del servidor")
+                    @Suppress("UNCHECKED_CAST")
+                    ApiResult.Success(Unit as T)
                 }
             } else {
                 ApiResult.Error(
                     code = response.code(),
-                    message = response.errorBody()?.string() ?: "Error desconocido"
+                    message = response.errorBody()?.string() ?: "Error"
                 )
             }
         } catch (e: IOException) {
-            ApiResult.Error(message = "Sin conexión a internet", exception = e)
+            ApiResult.Error(message = "Sin conexión", exception = e)
         } catch (e: Exception) {
-            ApiResult.Error(message = e.message ?: "Error inesperado", exception = e)
+            ApiResult.Error(message = e.message ?: "Error", exception = e)
         }
     }
 }
 </file>
 
-<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/screen/RegisterScreen.kt">
+<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/screen/ChatDetailScreen.kt">
 package com.example.tutoruam_proyecto.ui.screen
 
+import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Badge
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import com.example.tutoruam_proyecto.ui.components.UamTextField
+import androidx.compose.ui.unit.sp
+import java.text.SimpleDateFormat
+import java.util.Locale
+import java.util.TimeZone
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.tutoruam_proyecto.ui.model.Message
+import com.example.tutoruam_proyecto.ui.service.ApiResult
+import com.example.tutoruam_proyecto.ui.service.ServiceLocator
+import com.example.tutoruam_proyecto.ui.service.TokenManager
+import com.example.tutoruam_proyecto.ui.viewmodel.ChatViewModel
+import com.example.tutoruam_proyecto.ui.viewmodel.ChatViewModelFactory
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RegisterScreen(
-    onRegisterSuccess: () -> Unit,
-    onNavigateToLogin: () -> Unit
+fun ChatDetailScreen(
+    chatId: Long,
+    otherUserName: String,
+    onBackClick: () -> Unit,
+    viewModel: ChatViewModel = viewModel(factory = ChatViewModelFactory(ServiceLocator.chatRepository))
 ) {
-    val scope = rememberCoroutineScope()
-    val scrollState = rememberScrollState()
-    var name by remember { mutableStateOf("") }
-    var cif by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var errorMessage by remember { mutableStateOf("") }
-    var loading by remember { mutableStateOf(false) }
-    var showPassword by remember { mutableStateOf(false) }
+    var messageText by remember { mutableStateOf("") }
+    val messagesState by viewModel.messagesState.collectAsState()
+    val sendState by viewModel.sendMessageState.collectAsState()
+    val listState = rememberLazyListState()
 
-    Box(
+    DisposableEffect(chatId) {
+        val job = viewModel.startPolling(chatId)
+        onDispose { job.cancel() }
+    }
+
+    LaunchedEffect(sendState) {
+        if (sendState is ApiResult.Success) {
+            viewModel.clearSendState()
+            viewModel.loadMessages(chatId)
+        }
+    }
+
+    Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF8F9FB)),
-        contentAlignment = Alignment.Center
+            .background(MaterialTheme.colorScheme.background)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp)
-                .verticalScroll(scrollState),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Card(
-                shape = RoundedCornerShape(40.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .widthIn(max = 440.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(32.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+        TopAppBar(
+            title = { Text(otherUserName, fontWeight = FontWeight.Bold) },
+            navigationIcon = {
+                IconButton(onClick = onBackClick) {
+                    Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver")
+                }
+            },
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
+        )
+
+        when (val state = messagesState) {
+            is ApiResult.Loading -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+            is ApiResult.Success -> {
+                val messages = state.data
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier.weight(1f),
+                    reverseLayout = true,
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    AuthHeader(
-                        subtitle = "Crea tu cuenta universitaria"
-                    )
-
-                    Spacer(modifier = Modifier.height(32.dp))
-
-                    UamTextField(
-                        value = name,
-                        onValueChange = { name = it; errorMessage = "" },
-                        label = "Nombre",
-                        placeholder = "Nombre completo",
-                        leadingIcon = Icons.Default.Person,
-                        isError = errorMessage.isNotEmpty() && name.isBlank(),
-                        errorText = if (errorMessage.isNotEmpty() && name.isBlank()) "Campo requerido" else null
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    UamTextField(
-                        value = cif,
-                        onValueChange = { cif = it; errorMessage = "" },
-                        label = "CIF",
-                        placeholder = "ID Universitario",
-                        leadingIcon = Icons.Default.Badge,
-                        isError = errorMessage.isNotEmpty() && cif.isBlank(),
-                        errorText = if (errorMessage.isNotEmpty() && cif.isBlank()) "Campo requerido" else null
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    UamTextField(
-                        value = email,
-                        onValueChange = { email = it; errorMessage = "" },
-                        label = "Correo",
-                        placeholder = "Correo electrónico",
-                        leadingIcon = Icons.Default.Email,
-                        isError = errorMessage == "Correo no válido" || (errorMessage.isNotEmpty() && email.isBlank()),
-                        errorText = when {
-                            errorMessage == "Correo no válido" -> "Correo no válido"
-                            errorMessage.isNotEmpty() && email.isBlank() -> "Campo requerido"
-                            else -> null
-                        }
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    UamTextField(
-                        value = password,
-                        onValueChange = { password = it; errorMessage = "" },
-                        label = "Contraseña",
-                        placeholder = "Contraseña",
-                        leadingIcon = Icons.Default.Lock,
-                        visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
-                        trailingIcon = {
-                            IconButton(onClick = { showPassword = !showPassword }) {
-                                Icon(
-                                    imageVector = if (showPassword) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
-                        },
-                        isError = errorMessage.isNotEmpty() && (password.isBlank() || errorMessage.contains("contraseña")),
-                        errorText = when {
-                            errorMessage.contains("contraseña") -> errorMessage
-                            errorMessage.isNotEmpty() && password.isBlank() -> "Campo requerido"
-                            else -> null
-                        }
-                    )
-
-                    Spacer(modifier = Modifier.height(32.dp))
-
-                    Button(
-                        onClick = {
-                            when {
-                                name.isBlank() || cif.isBlank() || email.isBlank() || password.isBlank() -> {
-                                    errorMessage = "Por favor, complete todos los campos"
-                                }
-                                !email.contains("@") -> {
-                                    errorMessage = "Correo no válido"
-                                }
-                                password.length < 6 -> {
-                                    errorMessage = "La contraseña debe tener al menos 6 caracteres"
-                                }
-                                else -> {
-                                    errorMessage = ""
-                                    scope.launch {
-                                        loading = true
-                                        delay(800)
-                                        loading = false
-                                        onRegisterSuccess()
-                                    }
-                                }
-                            }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary
-                        ),
-                        enabled = !loading
-                    ) {
-                        if (loading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(24.dp),
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                strokeWidth = 2.dp
-                            )
-                        } else {
-                            Text(
-                                text = "Registrarse",
-                                style = MaterialTheme.typography.bodyLarge,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    TextButton(onClick = onNavigateToLogin) {
-                        Text(
-                            text = "¿Ya tienes cuenta? Inicia sesión",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
+                    items(messages.reversed()) { message ->
+                        MessageBubble(message = message, isMine = message.senderId == TokenManager.getUserId())
                     }
                 }
+                LaunchedEffect(messages) {
+                    if (messages.isNotEmpty()) {
+                        listState.animateScrollToItem(0)
+                    }
+                }
+            }
+            is ApiResult.Error -> {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("Error: ${state.message}", color = MaterialTheme.colorScheme.error)
+                }
+            }
+            null -> Unit
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            OutlinedTextField(
+                value = messageText,
+                onValueChange = { messageText = it },
+                placeholder = { Text("Escribe un mensaje...") },
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(24.dp)
+            )
+            IconButton(
+                onClick = {
+                    if (messageText.isNotBlank()) {
+                        viewModel.sendMessage(chatId, messageText)
+                        messageText = ""
+                    }
+                },
+                enabled = sendState !is ApiResult.Loading
+            ) {
+                Icon(Icons.AutoMirrored.Rounded.Send, contentDescription = "Enviar", tint = MaterialTheme.colorScheme.primary)
+            }
+        }
+    }
+}
+
+@Composable
+fun MessageBubble(message: Message, isMine: Boolean) {
+    val formattedTime = remember(message.sentAt) {
+        try {
+            val date = OffsetDateTime.parse(message.sentAt)
+            date.format(DateTimeFormatter.ofPattern("HH:mm"))
+        } catch (e: Exception) {
+            message.sentAt
+        }
+    }
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = if (isMine) Arrangement.End else Arrangement.Start
+    ) {
+        Surface(
+            shape = RoundedCornerShape(
+                topStart = 16.dp,
+                topEnd = 16.dp,
+                bottomStart = if (isMine) 16.dp else 4.dp,
+                bottomEnd = if (isMine) 4.dp else 16.dp
+            ),
+            color = if (isMine) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+            tonalElevation = 0.dp
+        ) {
+            Column(modifier = Modifier.padding(12.dp)) {
+                Text(
+                    text = message.content,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (isMine) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = formattedTime,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                    modifier = Modifier.align(Alignment.End)
+                )
             }
         }
     }
@@ -729,171 +859,98 @@ inline fun <T> ApiResult<T>.onError(action: (ApiResult.Error) -> Unit): ApiResul
 }
 </file>
 
-<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/service/ApiService.kt">
-package com.example.tutoruam_proyecto.ui.service
-
-import com.example.tutoruam_proyecto.ui.model.LoginRequest
-import com.example.tutoruam_proyecto.ui.model.LoginResponse
-import com.example.tutoruam_proyecto.ui.model.RegisterRequest
-import com.example.tutoruam_proyecto.ui.model.TutorResponse
-import retrofit2.Response
-import retrofit2.http.Body
-import retrofit2.http.GET
-import retrofit2.http.POST
-import retrofit2.http.Path
-import retrofit2.http.Query
-
-interface ApiService {
-
-    @POST("auth/login")
-    suspend fun login(
-        @Body request: LoginRequest
-    ): Response<LoginResponse>
-
-    @POST("auth/register")
-    suspend fun register(
-        @Body request: RegisterRequest
-    ): Response<LoginResponse>
-
-    @GET("tutors")
-    suspend fun getTutors(
-        @Query("subject") subject: String? = null
-    ): Response<List<TutorResponse>>
-
-    @GET("tutors/{id}")
-    suspend fun getTutorById(
-        @Path("id") tutorId: Int
-    ): Response<TutorResponse>
-}
-</file>
-
-<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/service/RetrofitClient.kt">
-package com.example.tutoruam_proyecto.ui.service
-
-import com.example.tutoruam_proyecto.BuildConfig
-import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
-import java.util.concurrent.TimeUnit
-
-object RetrofitClient {
-
-  // Cambia esta URL cuando tengas la API Java lista
-    private const val BASE_URL = "https://tu-api.com/api/v1/"
-    private const val TIMEOUT = 30L
-
-    private val loggingInterceptor = HttpLoggingInterceptor().apply {
-        level = if (BuildConfig.DEBUG) {
-            HttpLoggingInterceptor.Level.BODY
-        } else {
-            HttpLoggingInterceptor.Level.NONE
-        }
-    }
-
-    private val okHttpClient = OkHttpClient.Builder()
-        .connectTimeout(TIMEOUT, TimeUnit.SECONDS)
-        .readTimeout(TIMEOUT, TimeUnit.SECONDS)
-        .addInterceptor(loggingInterceptor)
-        .addInterceptor { chain ->
-            val requestBuilder = chain.request().newBuilder()
-            TokenManager.getToken()?.let { token ->
-                requestBuilder.addHeader("Authorization", "Bearer $token")
-            }
-            chain.proceed(requestBuilder.build())
-        }
-        .build()
-
-    val instance: ApiService by lazy {
-        Retrofit.Builder()
-            .baseUrl(BASE_URL)
-            .client(okHttpClient)
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-            .create(ApiService::class.java)
-    }
-}
-</file>
-
-<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/service/ServiceLocator.kt">
-package com.example.tutoruam_proyecto.ui.service
-
-import com.example.tutoruam_proyecto.ui.repository.AuthRepository
-import com.example.tutoruam_proyecto.ui.repository.AuthRepositoryImpl
-import com.example.tutoruam_proyecto.ui.repository.TutorRepository
-import com.example.tutoruam_proyecto.ui.repository.TutorRepositoryImpl
-
-object ServiceLocator {
-
-    private val apiService: ApiService by lazy {
-        RetrofitClient.instance
-    }
-
-    val authRepository: AuthRepository by lazy {
-        AuthRepositoryImpl(apiService)
-    }
-
-    val tutorRepository: TutorRepository by lazy {
-        TutorRepositoryImpl(apiService)
-    }
-}
-</file>
-
-<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/service/TokenManager.kt">
-package com.example.tutoruam_proyecto.ui.service
-
-object TokenManager {
-    private var token: String? = null
-    private var name: String? = null
-    private var email: String? = null
-
-    fun saveUser(token: String?, name: String?, email: String?) {
-        this.token = token
-        this.name = name
-        this.email = email
-    }
-
-    fun getToken(): String? = token
-    fun getName(): String = name ?: "Usuario"
-    fun getEmail(): String = email ?: "usuario@uam.edu.ni"
-
-    fun clear() {
-        token = null
-        name = null
-        email = null
-    }
-}
-</file>
-
-<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/viewmodel/LoginViewModel.kt">
+<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/viewmodel/ChatViewModel.kt">
 package com.example.tutoruam_proyecto.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.tutoruam_proyecto.ui.model.LoginResponse
-import com.example.tutoruam_proyecto.ui.repository.AuthRepository
+import com.example.tutoruam_proyecto.ui.model.Chat
+import com.example.tutoruam_proyecto.ui.model.Message
+import com.example.tutoruam_proyecto.ui.repository.ChatRepository
 import com.example.tutoruam_proyecto.ui.service.ApiResult
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class LoginViewModel(
-    private val authRepository: AuthRepository
+class ChatViewModel(
+    private val chatRepository: ChatRepository
 ) : ViewModel() {
 
-    private val _loginState = MutableStateFlow<ApiResult<LoginResponse>?>(null)
-    val loginState: StateFlow<ApiResult<LoginResponse>?> = _loginState.asStateFlow()
+    private val _chatsState = MutableStateFlow<ApiResult<List<Chat>>?>(null)
+    val chatsState: StateFlow<ApiResult<List<Chat>>?> = _chatsState.asStateFlow()
 
-    fun login(email: String, password: String) {
+    private val _messagesState = MutableStateFlow<ApiResult<List<Message>>?>(null)
+    val messagesState: StateFlow<ApiResult<List<Message>>?> = _messagesState.asStateFlow()
+
+    private val _sendMessageState = MutableStateFlow<ApiResult<Message>?>(null)
+    val sendMessageState: StateFlow<ApiResult<Message>?> = _sendMessageState.asStateFlow()
+
+    fun loadChats() {
         viewModelScope.launch {
-            _loginState.value = ApiResult.Loading
-            _loginState.value = authRepository.login(email, password)
+            _chatsState.value = ApiResult.Loading
+            _chatsState.value = chatRepository.getChats()
         }
     }
 
-    fun clearLoginState() {
-        _loginState.value = null
+    fun loadMessages(chatId: Long, since: String? = null) {
+        viewModelScope.launch {
+            _messagesState.value = ApiResult.Loading
+            _messagesState.value = chatRepository.getMessages(chatId, since)
+        }
+    }
+
+    fun sendMessage(chatId: Long, content: String) {
+        viewModelScope.launch {
+            _sendMessageState.value = ApiResult.Loading
+            val result = chatRepository.sendMessage(chatId, content)
+            _sendMessageState.value = result
+            if (result is ApiResult.Success) {
+                loadMessages(chatId)
+            }
+        }
+    }
+
+    fun clearMessagesState() {
+        _messagesState.value = null
+    }
+
+    fun clearSendState() {
+        _sendMessageState.value = null
+    }
+
+    fun startPolling(chatId: Long): Job {
+        return viewModelScope.launch {
+            while (true) {
+                val result = chatRepository.getMessages(chatId)
+                if (result is ApiResult.Success) {
+                    _messagesState.value = result
+                }
+                delay(3000)
+            }
+        }
+    }
+}
+</file>
+
+<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/viewmodel/ChatViewModelFactory.kt">
+package com.example.tutoruam_proyecto.ui.viewmodel
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import com.example.tutoruam_proyecto.ui.repository.ChatRepository
+
+class ChatViewModelFactory(
+    private val chatRepository: ChatRepository
+) : ViewModelProvider.Factory {
+    @Suppress("UNCHECKED_CAST")
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(ChatViewModel::class.java)) {
+            return ChatViewModel(chatRepository) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
 </file>
@@ -915,6 +972,117 @@ class LoginViewModelFactory(
             return LoginViewModel(authRepository) as T
         }
         throw IllegalArgumentException("ViewModel class desconocido: ${modelClass.name}")
+    }
+}
+</file>
+
+<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/viewmodel/TutoriasViewModel.kt">
+package com.example.tutoruam_proyecto.ui.viewmodel
+
+import android.util.Log
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
+import com.example.tutoruam_proyecto.ui.model.CreateClassRequest
+import com.example.tutoruam_proyecto.ui.model.TutorClass
+import com.example.tutoruam_proyecto.ui.model.UserRole
+import com.example.tutoruam_proyecto.ui.repository.ChatRepository
+import com.example.tutoruam_proyecto.ui.repository.TutoriasRepository
+import com.example.tutoruam_proyecto.ui.service.ApiResult
+import com.example.tutoruam_proyecto.ui.service.TokenManager
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+
+class TutoriasViewModel(
+    private val repository: TutoriasRepository,
+    private val chatRepository: ChatRepository,
+    private val role: UserRole
+) : ViewModel() {
+
+    private val _itemsState = MutableStateFlow<ApiResult<List<TutorClass>>>(ApiResult.Loading)
+    val itemsState: StateFlow<ApiResult<List<TutorClass>>> = _itemsState.asStateFlow()
+
+    private val _actionState = MutableStateFlow<ApiResult<Any>?>(null)
+    val actionState: StateFlow<ApiResult<Any>?> = _actionState.asStateFlow()
+
+    init {
+        loadData()
+    }
+
+    fun loadData(subject: String? = null) {
+        viewModelScope.launch {
+            _itemsState.value = ApiResult.Loading
+            _itemsState.value = if (role == UserRole.TUTOR) {
+                repository.getRequests(subject)
+            } else {
+                repository.getClasses(subject)
+            }
+        }
+    }
+
+    fun createPost(subject: String, time: String, description: String, maxStudents: Int) {
+        viewModelScope.launch {
+            _actionState.value = ApiResult.Loading
+            val request = CreateClassRequest(
+                subject = subject,
+                scheduledTime = time,
+                description = description,
+                maxStudents = maxStudents
+            )
+            val result = if (role == UserRole.TUTOR) {
+                repository.createClass(request)
+            } else {
+                repository.createRequest(request)
+            }
+            _actionState.value = result as ApiResult<Any>
+            if (result is ApiResult.Success) {
+                loadData()
+            }
+        }
+    }
+
+    fun joinClass(classId: Long, creatorName: String, creatorId: Long) {
+        viewModelScope.launch {
+            _actionState.value = ApiResult.Loading
+            val result = repository.joinClass(classId)
+            if (result is ApiResult.Success) {
+                // Ahora obtener el chat entre el usuario actual y el creador (tutor o estudiante)
+                val chatsResult = chatRepository.getChats()
+                if (chatsResult is ApiResult.Success) {
+                    val lastChat = chatsResult.data.lastOrNull { it.tutorId == creatorId || it.studentId == creatorId }
+                    if (lastChat != null) {
+                        _actionState.value = ApiResult.Success(Pair(lastChat.id, creatorName))
+                    } else {
+                        _actionState.value = ApiResult.Success(Unit)
+                    }
+                } else {
+                    _actionState.value = ApiResult.Success(Unit)
+                }
+                loadData()
+            } else {
+                _actionState.value = result as ApiResult<Any>
+            }
+        }
+    }
+
+    fun clearActionState() {
+        _actionState.value = null
+    }
+}
+
+class TutoriasViewModelFactory(
+    private val repository: TutoriasRepository,
+    private val chatRepository: ChatRepository,
+    private val role: UserRole
+) : ViewModelProvider.Factory {
+    override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(TutoriasViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return TutoriasViewModel(repository, chatRepository, role) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
 </file>
@@ -1662,6 +1830,7 @@ include(":app")
 
     <application
         android:allowBackup="true"
+        android:usesCleartextTraffic="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
@@ -1685,219 +1854,435 @@ include(":app")
 </manifest>
 </file>
 
-<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/screen/ChatScreen.kt">
+<file path="app/src/main/java/com/example/tutoruam_proyecto/MainActivity.kt">
+package com.example.tutoruam_proyecto
+
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.Modifier
+import com.example.tutoruam_proyecto.ui.navigation.AppNavigation
+import com.example.tutoruam_proyecto.ui.service.TokenManager
+import com.example.tutoruam_proyecto.ui.theme.TutorUamProyectoTheme
+
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        TokenManager.init(this)
+        enableEdgeToEdge()
+        setContent {
+            TutorUamProyectoTheme {
+                AppNavigation(modifier = Modifier.fillMaxSize())
+            }
+        }
+    }
+}
+</file>
+
+<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/model/LoginResponse.kt">
+package com.example.tutoruam_proyecto.ui.model
+
+data class LoginResponse(
+    val token: String? = null,
+    val userId: Long? = null,
+    val name: String? = null,
+    val email: String? = null,
+    val role: String? = null // "TUTOR" o "ESTUDIANTE"
+)
+</file>
+
+<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/model/RegisterRequest.kt">
+package com.example.tutoruam_proyecto.ui.model
+
+data class RegisterRequest(
+    val name: String,
+    val cif: String,
+    val email: String,
+    val password: String,
+    val role: String // "TUTOR" o "ESTUDIANTE"
+)
+</file>
+
+<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/repository/AuthRepositoryImpl.kt">
+package com.example.tutoruam_proyecto.ui.repository
+
+import android.util.Log
+import com.example.tutoruam_proyecto.ui.model.LoginRequest
+import com.example.tutoruam_proyecto.ui.model.LoginResponse
+import com.example.tutoruam_proyecto.ui.model.RegisterRequest
+import com.example.tutoruam_proyecto.ui.service.ApiResult
+import com.example.tutoruam_proyecto.ui.service.ApiService
+import com.example.tutoruam_proyecto.ui.service.TokenManager
+import java.io.IOException
+import retrofit2.Response
+
+class AuthRepositoryImpl(
+    private val apiService: ApiService
+) : AuthRepository {
+
+    override suspend fun login(email: String, password: String): ApiResult<LoginResponse> {
+        return executeAuthRequest {
+            apiService.login(LoginRequest(email, password))
+        }
+    }
+
+    override suspend fun register(request: RegisterRequest): ApiResult<LoginResponse> {
+        return executeAuthRequest {
+            apiService.register(request)
+        }
+    }
+
+    override suspend fun changeRole(newRole: String): ApiResult<Unit> {
+        return try {
+            val response = apiService.changeRole(newRole)
+            if (response.isSuccessful) {
+                // Actualizar el rol en el TokenManager si es necesario
+                TokenManager.saveUser(
+                    token = TokenManager.getToken() ?: "",
+                    userId = TokenManager.getUserId(),
+                    name = TokenManager.getName(),
+                    email = TokenManager.getEmail(),
+                    role = newRole
+                )
+                ApiResult.Success(Unit)
+            } else {
+                ApiResult.Error(
+                    code = response.code(),
+                    message = response.errorBody()?.string() ?: "Error al cambiar rol"
+                )
+            }
+        } catch (e: Exception) {
+            ApiResult.Error(message = e.message ?: "Error inesperado", exception = e)
+        }
+    }
+
+    private suspend fun executeAuthRequest(
+        request: suspend () -> Response<LoginResponse>
+    ): ApiResult<LoginResponse> {
+        return try {
+            Log.d("AuthRepo", "Enviando petición...")
+            val response = request()
+            Log.d("AuthRepo", "Código: ${response.code()}")
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null) {
+                    TokenManager.saveUser(
+                        token = body.token,
+                        userId = body.userId,
+                        name = body.name,
+                        email = body.email,
+                        role = body.role
+                    )
+                    ApiResult.Success(body)
+                } else {
+                    ApiResult.Error(message = "Respuesta vacía del servidor")
+                }
+            } else {
+                ApiResult.Error(
+                    code = response.code(),
+                    message = response.errorBody()?.string() ?: "Error desconocido"
+                )
+            }
+        } catch (e: IOException) {
+            Log.e("AuthRepo", "Error de red: ${e.message}", e)
+            ApiResult.Error(message = "Sin conexión a internet", exception = e)
+        } catch (e: Exception) {
+            Log.e("AuthRepo", "Error: ${e.message}", e)
+            ApiResult.Error(message = e.message ?: "Error inesperado", exception = e)
+        }
+    }
+}
+</file>
+
+<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/screen/RegisterScreen.kt">
 package com.example.tutoruam_proyecto.ui.screen
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.DoneAll
-import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.filled.Badge
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-
-data class ChatItem(
-    val name: String,
-    val lastMessage: String,
-    val time: String,
-    val unreadCount: Int,
-    val isOnline: Boolean,
-    val hasTicks: Boolean
-)
+import com.example.tutoruam_proyecto.ui.components.UamTextField
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.tutoruam_proyecto.ui.service.ApiResult
+import com.example.tutoruam_proyecto.ui.service.ServiceLocator
+import com.example.tutoruam_proyecto.ui.viewmodel.LoginViewModel
+import com.example.tutoruam_proyecto.ui.viewmodel.LoginViewModelFactory
+import com.example.tutoruam_proyecto.ui.model.RegisterRequest
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
-fun ChatScreen() {
-    var searchQuery by remember { mutableStateOf("") }
-
-    val mockChats = listOf(
-        ChatItem("Marta Rodríguez", "¡Excelente! Nos vemos en el aula B2 para la sesión de Cálculo.", "14:20", 2, true, false),
-        ChatItem("Carlos Mendoza", "¿Podrías enviarme el PDF de la guía de Física?", "10:45", 0, false, true),
-        ChatItem("Sofía Villalta", "La tutoría de Programación II ha sido confirmada.", "Ayer", 1, true, false),
-        ChatItem("Grupo: Macroeconomía", "Ricardo: No olviden leer el capítulo 5 para el miércoles.", "Lun", 0, false, false)
+fun RegisterScreen(
+    onRegisterSuccess: () -> Unit,
+    onNavigateToLogin: () -> Unit
+) {
+    val viewModel: LoginViewModel = viewModel(
+        factory = LoginViewModelFactory(ServiceLocator.authRepository)
     )
+    val loginState by viewModel.loginState.collectAsState()
+    val scope = rememberCoroutineScope()
+    val scrollState = rememberScrollState()
+    var name by remember { mutableStateOf("") }
+    var cif by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var selectedRole by remember { mutableStateOf("ESTUDIANTE") }
+    var errorMessage by remember { mutableStateOf("") }
+    var showPassword by remember { mutableStateOf(false) }
+    val loading = loginState is ApiResult.Loading
 
-    Column(
+    LaunchedEffect(loginState) {
+        when (val state = loginState) {
+            is ApiResult.Success -> {
+                viewModel.clearLoginState()
+                onRegisterSuccess()
+            }
+            is ApiResult.Error -> {
+                errorMessage = state.message ?: "Error inesperado"
+                viewModel.clearLoginState()
+            }
+            else -> Unit
+        }
+    }
+
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .background(Color(0xFFF8F9FB)),
+        contentAlignment = Alignment.Center
     ) {
-        Column(modifier = Modifier.padding(top = 16.dp, start = 20.dp, end = 20.dp)) {
-            Text(
-                "Chats",
-                style = MaterialTheme.typography.displayLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                placeholder = {
-                    Text("Buscar conversaciones...", style = MaterialTheme.typography.bodyMedium)
-                },
-                leadingIcon = {
-                    Icon(Icons.Rounded.Search, contentDescription = null, tint = MaterialTheme.colorScheme.outline)
-                },
-                shape = RoundedCornerShape(16.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    unfocusedBorderColor = Color.Transparent,
-                    focusedBorderColor = MaterialTheme.colorScheme.primaryContainer,
-                    focusedContainerColor = Color(0xFFECEFF3),
-                    unfocusedContainerColor = Color(0xFFECEFF3)
-                ),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        LazyColumn(
-            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 96.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp)
+                .verticalScroll(scrollState),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            items(mockChats) { chat ->
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .shadow(elevation = 2.dp, shape = RoundedCornerShape(20.dp))
-                        .clickable { },
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            Card(
+                shape = RoundedCornerShape(40.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 440.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    AuthHeader(
+                        subtitle = "Crea tu cuenta universitaria"
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = "Registrarse como:",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.align(Alignment.Start)
+                    )
                     Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Box {
-                            Box(
-                                modifier = Modifier
-                                    .size(56.dp)
-                                    .background(Color(0xFFE2E7ED), CircleShape),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    chat.name.first().toString(),
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    fontSize = 20.sp
-                                )
-                            }
-                            if (chat.isOnline) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(16.dp)
-                                        .align(Alignment.BottomEnd)
-                                        .background(Color(0xFF22C55E), CircleShape)
-                                        .border(2.dp, Color.White, CircleShape)
-                                )
-                            }
+                        RadioButton(
+                            selected = selectedRole == "ESTUDIANTE",
+                            onClick = { selectedRole = "ESTUDIANTE" }
+                        )
+                        Text(
+                            text = "Estudiante",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        RadioButton(
+                            selected = selectedRole == "TUTOR",
+                            onClick = { selectedRole = "TUTOR" }
+                        )
+                        Text(
+                            text = "Tutor",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    UamTextField(
+                        value = name,
+                        onValueChange = { name = it; errorMessage = "" },
+                        label = "Nombre",
+                        placeholder = "Nombre completo",
+                        leadingIcon = Icons.Default.Person,
+                        isError = errorMessage.isNotEmpty() && name.isBlank(),
+                        errorText = if (errorMessage.isNotEmpty() && name.isBlank()) "Campo requerido" else null
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    UamTextField(
+                        value = cif,
+                        onValueChange = { cif = it; errorMessage = "" },
+                        label = "CIF",
+                        placeholder = "ID Universitario",
+                        leadingIcon = Icons.Default.Badge,
+                        isError = errorMessage.isNotEmpty() && cif.isBlank(),
+                        errorText = if (errorMessage.isNotEmpty() && cif.isBlank()) "Campo requerido" else null
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    UamTextField(
+                        value = email,
+                        onValueChange = { email = it; errorMessage = "" },
+                        label = "Correo",
+                        placeholder = "Correo electrónico",
+                        leadingIcon = Icons.Default.Email,
+                        isError = errorMessage == "Correo no válido" || (errorMessage.isNotEmpty() && email.isBlank()),
+                        errorText = when {
+                            errorMessage == "Correo no válido" -> "Correo no válido"
+                            errorMessage.isNotEmpty() && email.isBlank() -> "Campo requerido"
+                            else -> null
                         }
+                    )
 
-                        Column(modifier = Modifier.weight(1f)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    chat.name,
-                                    style = MaterialTheme.typography.headlineSmall,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    chat.time,
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = if (chat.unreadCount > 0) MaterialTheme.colorScheme.primary
-                                    else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontWeight = if (chat.unreadCount > 0) FontWeight.Bold else FontWeight.Medium
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    UamTextField(
+                        value = password,
+                        onValueChange = { password = it; errorMessage = "" },
+                        label = "Contraseña",
+                        placeholder = "Contraseña",
+                        leadingIcon = Icons.Default.Lock,
+                        visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                        trailingIcon = {
+                            IconButton(onClick = { showPassword = !showPassword }) {
+                                Icon(
+                                    imageVector = if (showPassword) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(24.dp)
                                 )
                             }
+                        },
+                        isError = errorMessage.isNotEmpty() && (password.isBlank() || errorMessage.contains("contraseña")),
+                        errorText = when {
+                            errorMessage.contains("contraseña") -> errorMessage
+                            errorMessage.isNotEmpty() && password.isBlank() -> "Campo requerido"
+                            else -> null
+                        }
+                    )
 
-                            Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(32.dp))
 
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Row(
-                                    modifier = Modifier.weight(1f),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                ) {
-                                    if (chat.hasTicks) {
-                                        Icon(
-                                            Icons.Rounded.DoneAll,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.size(16.dp)
+                    Button(
+                        onClick = {
+                            when {
+                                name.isBlank() || cif.isBlank() || email.isBlank() || password.isBlank() -> {
+                                    errorMessage = "Por favor, complete todos los campos"
+                                }
+                                !email.contains("@") -> {
+                                    errorMessage = "Correo no válido"
+                                }
+                                password.length < 6 -> {
+                                    errorMessage = "La contraseña debe tener al menos 6 caracteres"
+                                }
+                                else -> {
+                                    errorMessage = ""
+                                    viewModel.register(
+                                        RegisterRequest(
+                                            name = name,
+                                            cif = cif,
+                                            email = email,
+                                            password = password,
+                                            role = selectedRole
                                         )
-                                    }
-                                    Text(
-                                        chat.lastMessage,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        maxLines = 1,
-                                        modifier = Modifier.fillMaxWidth()
                                     )
                                 }
-
-                                if (chat.unreadCount > 0) {
-                                    Surface(
-                                        color = MaterialTheme.colorScheme.primaryContainer,
-                                        shape = CircleShape,
-                                        modifier = Modifier.size(20.dp)
-                                    ) {
-                                        Box(contentAlignment = Alignment.Center) {
-                                            Text(
-                                                chat.unreadCount.toString(),
-                                                color = Color.White,
-                                                fontWeight = FontWeight.Bold,
-                                                fontSize = 10.sp
-                                            )
-                                        }
-                                    }
-                                }
                             }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        ),
+                        enabled = !loading
+                    ) {
+                        if (loading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text(
+                                text = "Registrarse",
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    TextButton(onClick = onNavigateToLogin) {
+                        Text(
+                            text = "¿Ya tienes cuenta? Inicia sesión",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
                     }
                 }
             }
@@ -1906,219 +2291,177 @@ fun ChatScreen() {
 }
 </file>
 
-<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/screen/RoleSelectionScreen.kt">
-package com.example.tutoruam_proyecto.ui.screen
+<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/service/ApiService.kt">
+package com.example.tutoruam_proyecto.ui.service
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ArrowForward
-import androidx.compose.material.icons.rounded.School
-import androidx.compose.material3.Card
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.example.tutoruam_proyecto.ui.model.UserRole
+import com.example.tutoruam_proyecto.ui.model.*
+import retrofit2.Response
+import retrofit2.http.*
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun RoleSelectionScreen(
-    onRoleSelected: (UserRole) -> Unit
-) {
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    Icons.Rounded.School,
-                                    contentDescription = null,
-                                    tint = Color.White,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                        }
-                        Text(
-                            "Universidad Americana",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
-            )
-        }
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .padding(innerPadding)
-                .padding(top = 8.dp, start = 20.dp, end = 20.dp, bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    text = "Elige tu rol",
-                    style = MaterialTheme.typography.displayLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = "Selecciona cómo deseas participar en nuestra comunidad académica.",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
-            }
+interface ApiService {
 
-            RoleSelectionCard(
-                title = "Ser tutor",
-                subtitle = "Comparte tus conocimientos y ayuda a otros estudiantes a alcanzar sus metas académicas.",
-                isRecommended = true,
-                gradientColor = Color(0xFF003057),
-                onClick = { onRoleSelected(UserRole.TUTOR) },
-                modifier = Modifier.weight(1f)
-            )
+    @POST("auth/login")
+    suspend fun login(@Body request: LoginRequest): Response<LoginResponse>
 
-            RoleSelectionCard(
-                title = "Ser estudiante",
-                subtitle = "Encuentra el apoyo que necesitas y domina tus materias con la ayuda de expertos pares.",
-                isRecommended = false,
-                gradientColor = Color(0xFF00457C),
-                onClick = { onRoleSelected(UserRole.ESTUDIANTE) },
-                modifier = Modifier.weight(1f)
-            )
+    @POST("auth/register")
+    suspend fun register(@Body request: RegisterRequest): Response<LoginResponse>
+
+    // Clases y Solicitudes
+    @GET("classes")
+    suspend fun getClasses(@Query("subject") subject: String? = null): Response<List<ClassSessionResponse>>
+
+    @POST("classes")
+    suspend fun createClass(@Body request: CreateClassRequest): Response<ClassSessionResponse>
+
+    @POST("classes/{id}/join")
+    suspend fun joinClass(@Path("id") classId: Long): Response<Unit>
+
+    @GET("requests")
+    suspend fun getRequests(@Query("subject") subject: String? = null): Response<List<HelpRequestResponse>>
+
+    @POST("requests")
+    suspend fun createRequest(@Body request: CreateClassRequest): Response<HelpRequestResponse>
+
+    // Chats
+    @GET("chats")
+    suspend fun getChats(): Response<List<Chat>>
+
+    @GET("chats/{chatId}/messages")
+    suspend fun getMessages(
+        @Path("chatId") chatId: Long,
+        @Query("since") since: String? = null
+    ): Response<List<Message>>
+
+    @POST("chats/{chatId}/messages")
+    suspend fun sendMessage(
+        @Path("chatId") chatId: Long,
+        @Body request: SendMessageRequest
+    ): Response<Message>
+
+    @POST("users/me/role")
+    suspend fun changeRole(@Query("newRole") newRole: String): Response<Unit>
+}
+</file>
+
+<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/service/RetrofitClient.kt">
+package com.example.tutoruam_proyecto.ui.service
+
+import com.example.tutoruam_proyecto.BuildConfig
+import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import java.util.concurrent.TimeUnit
+
+object RetrofitClient {
+
+    private const val BASE_URL = "http://192.168.1.14:8082/api/v1/"
+    private const val TIMEOUT = 10L
+
+    private val loggingInterceptor = HttpLoggingInterceptor().apply {
+        level = if (BuildConfig.DEBUG) {
+            HttpLoggingInterceptor.Level.BODY
+        } else {
+            HttpLoggingInterceptor.Level.NONE
         }
     }
-}
 
-@Composable
-fun RoleSelectionCard(
-    title: String,
-    subtitle: String,
-    isRecommended: Boolean,
-    gradientColor: Color,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .shadow(
-                elevation = 8.dp,
-                shape = RoundedCornerShape(24.dp)
-            )
-            .clickable { onClick() },
-        shape = RoundedCornerShape(24.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            gradientColor.copy(alpha = 0.5f),
-                            gradientColor
-                        )
-                    )
-                )
-                .padding(24.dp)
-        ) {
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Top
-                ) {
-                    if (isRecommended) {
-                        Surface(
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            shape = RoundedCornerShape(percent = 50),
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        ) {
-                            Text(
-                                "RECOMENDADO",
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White,
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                            )
-                        }
-                    } else {
-                        Spacer(modifier = Modifier.width(1.dp))
-                    }
-                }
+    private val okHttpClient = OkHttpClient.Builder()
+        .connectTimeout(TIMEOUT, TimeUnit.SECONDS)
+        .readTimeout(TIMEOUT, TimeUnit.SECONDS)
+        .writeTimeout(TIMEOUT, TimeUnit.SECONDS)
+        .addInterceptor(loggingInterceptor)
+        .addInterceptor { chain ->
+            val request = chain.request()
+            val url = request.url.toString()
 
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        text = title,
-                        fontSize = 28.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                    Text(
-                        text = subtitle,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White.copy(alpha = 0.85f),
-                        modifier = Modifier.padding(top = 4.dp, bottom = 12.dp),
-                        lineHeight = 20.sp
-                    )
-
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.End)
-                            .size(44.dp)
-                            .background(Color.White.copy(alpha = 0.2f), CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            Icons.Rounded.ArrowForward,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
+            // Solo agregar token si NO es una petición de autenticación
+            if (!url.contains("/auth/")) {
+                TokenManager.getToken()?.let { token ->
+                    val requestBuilder = request.newBuilder()
+                        .addHeader("Authorization", "Bearer $token")
+                    return@addInterceptor chain.proceed(requestBuilder.build())
                 }
             }
+            chain.proceed(request)
         }
+        .build()
+
+    val instance: ApiService by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(ApiService::class.java)
+    }
+}
+</file>
+
+<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/service/ServiceLocator.kt">
+package com.example.tutoruam_proyecto.ui.service
+
+import com.example.tutoruam_proyecto.ui.repository.*
+
+object ServiceLocator {
+
+    private val apiService: ApiService by lazy {
+        RetrofitClient.instance
+    }
+
+    val authRepository: AuthRepository by lazy {
+        AuthRepositoryImpl(apiService)
+    }
+
+    val chatRepository: ChatRepository by lazy {
+        ChatRepositoryImpl(apiService)
+    }
+
+    val tutoriasRepository: TutoriasRepository by lazy {
+        TutoriasRepositoryImpl(apiService)
+    }
+}
+</file>
+
+<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/service/TokenManager.kt">
+package com.example.tutoruam_proyecto.ui.service
+
+import android.content.Context
+import android.content.SharedPreferences
+
+object TokenManager {
+    private const val PREFS_NAME = "tutoruam_prefs"
+    private const val KEY_TOKEN = "token"
+    private const val KEY_USER_ID = "user_id"
+    private const val KEY_NAME = "name"
+    private const val KEY_EMAIL = "email"
+    private const val KEY_ROLE = "role"
+
+    private var sharedPreferences: SharedPreferences? = null
+
+    fun init(context: Context) {
+        sharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    }
+
+    fun saveUser(token: String?, userId: Long?, name: String?, email: String?, role: String?) {
+        sharedPreferences?.edit()?.apply {
+            putString(KEY_TOKEN, token)
+            userId?.let { putLong(KEY_USER_ID, it) }
+            putString(KEY_NAME, name)
+            putString(KEY_EMAIL, email)
+            putString(KEY_ROLE, role)
+            apply()
+        }
+    }
+
+    fun getToken(): String? = sharedPreferences?.getString(KEY_TOKEN, null)
+    fun getUserId(): Long? = sharedPreferences?.getLong(KEY_USER_ID, -1L).takeIf { it != -1L }
+    fun getName(): String = sharedPreferences?.getString(KEY_NAME, "Usuario") ?: "Usuario"
+    fun getEmail(): String = sharedPreferences?.getString(KEY_EMAIL, "usuario@uam.edu.ni") ?: "usuario@uam.edu.ni"
+    fun getRole(): String = sharedPreferences?.getString(KEY_ROLE, "ESTUDIANTE") ?: "ESTUDIANTE"
+
+    fun clear() {
+        sharedPreferences?.edit()?.clear()?.apply()
     }
 }
 </file>
@@ -2236,6 +2579,50 @@ val Typography = Typography(
 )
 </file>
 
+<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/viewmodel/LoginViewModel.kt">
+package com.example.tutoruam_proyecto.ui.viewmodel
+
+import android.util.Log
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.tutoruam_proyecto.ui.model.LoginResponse
+import com.example.tutoruam_proyecto.ui.repository.AuthRepository
+import com.example.tutoruam_proyecto.ui.service.ApiResult
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+
+class LoginViewModel(
+    private val authRepository: AuthRepository
+) : ViewModel() {
+
+    private val _loginState = MutableStateFlow<ApiResult<LoginResponse>?>(null)
+    val loginState: StateFlow<ApiResult<LoginResponse>?> = _loginState.asStateFlow()
+
+    fun login(email: String, password: String) {
+        viewModelScope.launch {
+            Log.d("LoginVM", "Login iniciado")
+            _loginState.value = ApiResult.Loading
+            val result = authRepository.login(email, password)
+            Log.d("LoginVM", "Resultado: $result")
+            _loginState.value = result
+        }
+    }
+
+    fun register(request: com.example.tutoruam_proyecto.ui.model.RegisterRequest) {
+        viewModelScope.launch {
+            _loginState.value = ApiResult.Loading
+            _loginState.value = authRepository.register(request)
+        }
+    }
+
+    fun clearLoginState() {
+        _loginState.value = null
+    }
+}
+</file>
+
 <file path="build.gradle.kts">
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 plugins {
@@ -2287,6 +2674,17 @@ android {
         compose = true
         buildConfig = true
     }
+    packaging {
+        resources {
+            excludes += "/META-INF/INDEX.LIST"
+            excludes += "/META-INF/DEPENDENCIES"
+            excludes += "/META-INF/LICENSE*"
+            excludes += "/META-INF/NOTICE*"
+            excludes += "/META-INF/AL2.0"
+            excludes += "/META-INF/LGPL2.1"
+            excludes += "**/io.netty.versions.properties"
+        }
+    }
 }
 
 dependencies {
@@ -2332,617 +2730,65 @@ dependencies {
 }
 </file>
 
-<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/navigation/AppNavigation.kt">
-package com.example.tutoruam_proyecto.ui.navigation
-
-
-
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-import com.example.tutoruam_proyecto.ui.model.UserRole
-import com.example.tutoruam_proyecto.ui.screen.HomeScreen
-import com.example.tutoruam_proyecto.ui.screen.LoginScreen
-import com.example.tutoruam_proyecto.ui.screen.RegisterScreen
-import com.example.tutoruam_proyecto.ui.screen.RoleSelectionScreen
-
-@Composable
-fun AppNavigation(modifier: Modifier = Modifier) {
-    val navController = rememberNavController()
-    var selectedRole by rememberSaveable { mutableStateOf(UserRole.ESTUDIANTE) }
-
-    NavHost(
-        navController = navController,
-        startDestination = LoginDestination,
-        modifier = modifier.fillMaxSize()
-    ) {
-        composable<LoginDestination> {
-            LoginScreen(
-                onLoginSuccess = {
-                    navController.navigate(RoleSelectionDestination) {
-                        popUpTo(LoginDestination) { inclusive = true }
-                    }
-                },
-                onNavigateToRegister = {
-                    navController.navigate(RegisterDestination)
-                }
-            )
-        }
-
-        composable<RegisterDestination> {
-            RegisterScreen(
-                onRegisterSuccess = {
-                    navController.navigate(RoleSelectionDestination) {
-                        popUpTo(LoginDestination) { inclusive = true }
-                    }
-                },
-                onNavigateToLogin = {
-                    navController.popBackStack()
-                }
-            )
-        }
-
-        composable<RoleSelectionDestination> {
-            RoleSelectionScreen(
-                onRoleSelected = { role ->
-                    selectedRole = role
-                    navController.navigate(HomeDestination) {
-                        popUpTo(RoleSelectionDestination) { inclusive = true }
-                    }
-                }
-            )
-        }
-
-        composable<HomeDestination> {
-            HomeScreen(
-                modifier = Modifier.fillMaxSize(),
-                role = selectedRole,
-                onChangeRole = {
-                    navController.navigate(RoleSelectionDestination)
-                },
-                onLogout = {
-                    navController.navigate(LoginDestination) {
-                        popUpTo(HomeDestination) { inclusive = true }
-                    }
-                }
-            )
-        }
-    }
-}
-</file>
-
-<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/navigation/Navigation.kt">
-package com.example.tutoruam_proyecto.ui.navigation
-
-import kotlinx.serialization.Serializable
-
-// Rutas del flujo principal.
-@Serializable
-object LoginDestination
-
-@Serializable
-object RegisterDestination
-
-@Serializable
-object HomeDestination
-
-@Serializable
-object RoleSelectionDestination
-
-// Rutas de la barra inferior dentro de Home.
-@Serializable
-object TutoriasDestination
-
-@Serializable
-object ChatDestination
-
-@Serializable
-object PerfilDestination
-</file>
-
-<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/screen/HomeScreen.kt">
-package com.example.tutoruam_proyecto.ui.screen
-
-import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.ExitTransition
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ChatBubble
-import androidx.compose.material.icons.rounded.Person
-import androidx.compose.material.icons.rounded.School
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.navigation.NavDestination
-import androidx.navigation.NavDestination.Companion.hasRoute
-import androidx.navigation.NavDestination.Companion.hierarchy
-import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
-import com.example.tutoruam_proyecto.ui.model.UserRole
-import com.example.tutoruam_proyecto.ui.navigation.ChatDestination
-import com.example.tutoruam_proyecto.ui.navigation.PerfilDestination
-import com.example.tutoruam_proyecto.ui.navigation.TutoriasDestination
-
-@Composable
-fun HomeScreen(
-    modifier: Modifier = Modifier,
-    role: UserRole,
-    onChangeRole: () -> Unit,
-    onLogout: () -> Unit
-) {
-    val homeNavController = rememberNavController()
-    val currentDestination = homeNavController.currentBackStackEntryAsState().value?.destination
-
-    val items = listOf(
-        BottomItem(
-            label = "Tutoría",
-            icon = Icons.Rounded.School,
-            destination = TutoriasDestination,
-            isSelected = { dest -> dest?.hierarchy?.any { it.hasRoute<TutoriasDestination>() } == true }
-        ),
-        BottomItem(
-            label = "Chat",
-            icon = Icons.Rounded.ChatBubble,
-            destination = ChatDestination,
-            isSelected = { dest -> dest?.hierarchy?.any { it.hasRoute<ChatDestination>() } == true }
-        ),
-        BottomItem(
-            label = "Perfil",
-            icon = Icons.Rounded.Person,
-            destination = PerfilDestination,
-            isSelected = { dest -> dest?.hierarchy?.any { it.hasRoute<PerfilDestination>() } == true }
-        )
-    )
-
-    Scaffold(
-        modifier = modifier,
-        bottomBar = {
-            NavigationBar(
-                containerColor = MaterialTheme.colorScheme.surface,
-                modifier = Modifier.shadow(8.dp),
-                tonalElevation = 0.dp
-            ) {
-                items.forEach { item ->
-                    val selected = item.isSelected(currentDestination)
-
-                    NavigationBarItem(
-                        selected = selected,
-                        onClick = {
-                            homeNavController.navigate(item.destination) {
-                                popUpTo(homeNavController.graph.findStartDestination().id) {
-                                    saveState = true
-                                }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
-                        icon = {
-                            Icon(
-                                item.icon,
-                                contentDescription = item.label,
-                                tint = if (selected) MaterialTheme.colorScheme.primary
-                                else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        },
-                        label = {
-                            Text(
-                                item.label,
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                                color = if (selected) MaterialTheme.colorScheme.primary
-                                else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        },
-                        colors = NavigationBarItemDefaults.colors(
-                            indicatorColor = MaterialTheme.colorScheme.secondaryContainer
-                        )
-                    )
-                }
-            }
-        }
-    ) { innerPadding ->
-        HomeNavHost(
-            modifier = Modifier.padding(innerPadding),
-            navController = homeNavController,
-            role = role,
-            onChangeRole = onChangeRole,
-            onLogout = onLogout
-        )
-    }
-}
-
-private data class BottomItem(
-    val label: String,
-    val icon: androidx.compose.ui.graphics.vector.ImageVector,
-    val destination: Any,
-    val isSelected: (NavDestination?) -> Boolean
-)
-
-@Composable
-private fun HomeNavHost(
-    modifier: Modifier,
-    navController: NavHostController,
-    role: UserRole,
-    onChangeRole: () -> Unit,
-    onLogout: () -> Unit
-) {
-    NavHost(
-        navController = navController,
-        startDestination = TutoriasDestination,
-        modifier = modifier,
-        enterTransition = { EnterTransition.None },
-        exitTransition = { ExitTransition.None },
-        popEnterTransition = { EnterTransition.None },
-        popExitTransition = { ExitTransition.None }
-    ) {
-        composable<TutoriasDestination> {
-            TutoriasScreen(role = role)
-        }
-        composable<ChatDestination> {
-            ChatScreen()
-        }
-        composable<PerfilDestination> {
-            PerfilScreen(
-                onChangeRole = onChangeRole,
-                onLogout = onLogout
-            )
-        }
-    }
-}
-</file>
-
-<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/screen/PerfilScreen.kt">
+<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/screen/ChatScreen.kt">
 package com.example.tutoruam_proyecto.ui.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ChevronRight
-import androidx.compose.material.icons.rounded.Logout
-import androidx.compose.material.icons.rounded.SwapHoriz
-import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.example.tutoruam_proyecto.ui.model.UserRole
-import com.example.tutoruam_proyecto.ui.service.TokenManager
-
-@Composable
-fun PerfilScreen(
-    role: UserRole,
-    onChangeRole: () -> Unit = {},
-    onLogout: () -> Unit = {}
-) {
-    val scrollState = rememberScrollState()
-    val userName = TokenManager.getName()
-    val userEmail = TokenManager.getEmail()
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFFF8F9FB))
-            .verticalScroll(scrollState)
-            .padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally // Centering content
-    ) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                "Tu Perfil",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
-            )
-            Text(
-                "Información personal",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-
-        Card(
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            modifier = Modifier
-                .fillMaxWidth()
-                .shadow(2.dp, RoundedCornerShape(24.dp))
-        ) {
-            Column(
-                modifier = Modifier.padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                // Profile Circle
-                Box(
-                    modifier = Modifier
-                        .size(100.dp)
-                        .background(MaterialTheme.colorScheme.secondaryContainer, CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        userName.take(2).uppercase(),
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontSize = 32.sp
-                    )
-                }
-
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        userName,
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        userEmail,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                // Display Role Tag
-                Surface(
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    shape = RoundedCornerShape(50)
-                ) {
-                    Text(
-                        text = if (role == UserRole.TUTOR) "Tutor" else "Estudiante",
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                    )
-                }
-            }
-        }
-
-        Column(
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(
-                "Configuración",
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = 4.dp)
-            )
-
-            ProfileListItem(
-                icon = Icons.Rounded.SwapHoriz,
-                title = "Cambiar rol",
-                iconBgColor = MaterialTheme.colorScheme.secondaryContainer,
-                iconColor = MaterialTheme.colorScheme.primary,
-                onClick = onChangeRole
-            )
-
-            ProfileListItem(
-                icon = Icons.Rounded.Logout,
-                title = "Cerrar sesión",
-                iconBgColor = MaterialTheme.colorScheme.errorContainer,
-                iconColor = MaterialTheme.colorScheme.error,
-                onClick = onLogout
-            )
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-    }
-}
-
-@Composable
-fun ProfileListItem(
-    icon: ImageVector,
-    title: String,
-    iconBgColor: Color,
-    iconColor: Color,
-    onClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
-            .shadow(1.dp, RoundedCornerShape(16.dp)),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .background(iconBgColor, CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        icon,
-                        contentDescription = null,
-                        tint = iconColor,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-                Text(
-                    title,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-            Icon(
-                Icons.Rounded.ChevronRight,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.outline
-            )
-        }
-    }
-}
-</file>
-
-<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/screen/TutoriasScreen.kt">
-package com.example.tutoruam_proyecto.ui.screen
-
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Book
-import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.rounded.School
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import com.example.tutoruam_proyecto.ui.model.UserRole
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.tutoruam_proyecto.ui.model.Chat
+import com.example.tutoruam_proyecto.ui.service.ApiResult
+import com.example.tutoruam_proyecto.ui.service.ServiceLocator
+import com.example.tutoruam_proyecto.ui.service.TokenManager
+import com.example.tutoruam_proyecto.ui.viewmodel.ChatViewModel
+import com.example.tutoruam_proyecto.ui.viewmodel.ChatViewModelFactory
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TutoriasScreen(role: UserRole) {
+fun ChatScreen(
+    onChatClick: (Chat) -> Unit,
+    viewModel: ChatViewModel = viewModel(factory = ChatViewModelFactory(ServiceLocator.chatRepository))
+) {
+    val chatsState by viewModel.chatsState.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
-    var showForm by remember { mutableStateOf(false) }
 
-    // Mock data for requests
-    val allRequests = remember {
-        mutableStateListOf(
-            TutorRequest("María Rodríguez", "Cálculo Diferencial", "15:30", true, "Necesito ayuda con derivadas e integrales para el examen parcial de mañana.", maxStudents = 1),
-            TutorRequest("José Perales", "Programación II", "10:00", false, "No logro entender bien el concepto de recursividad en Java.", maxStudents = 5),
-            TutorRequest("Elena Méndez", "Física I", "17:00", false, "Problemas con diagramas de cuerpo libre y leyes de Newton.", maxStudents = 3)
-        )
+    LaunchedEffect(Unit) {
+        viewModel.loadChats()
     }
 
-    val filteredRequests = allRequests.filter {
-        it.subject.contains(searchQuery, ignoreCase = true)
-    }
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(36.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    Icons.Rounded.School,
-                                    contentDescription = null,
-                                    tint = Color.White,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                        }
-                        Text(
-                            "Universidad Americana",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
-            )
-        },
-        floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = { showForm = true },
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = Color.White,
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.padding(bottom = 16.dp)
-            ) {
-                Icon(imageVector = Icons.Default.Add, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = if (role == UserRole.TUTOR) "Ofrecer ayuda" else "Pedir ayuda",
-                    fontWeight = FontWeight.Bold
-                )
-            }
-        }
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color(0xFFF8F9FB))
-                .padding(innerPadding)
-                .padding(horizontal = 20.dp)
-        ) {
-            Spacer(modifier = Modifier.height(16.dp))
-
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+        Column(modifier = Modifier.padding(top = 16.dp, start = 20.dp, end = 20.dp)) {
             Text(
-                text = if (role == UserRole.TUTOR) "Hola, Tutor" else "Hola, Estudiante",
-                style = MaterialTheme.typography.displayLarge.copy(fontSize = 24.sp),
-                color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.Bold
+                "Chats",
+                style = MaterialTheme.typography.displayLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
             )
-            Text(
-                text = if (role == UserRole.TUTOR) "¿A quién quieres ayudar hoy?" else "¿Qué quieres aprender hoy?",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
             Spacer(modifier = Modifier.height(16.dp))
-
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
-                placeholder = { Text("Buscar por materia...", style = MaterialTheme.typography.bodyMedium) },
-                leadingIcon = { Icon(imageVector = Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.outline) },
-                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("Buscar conversaciones...", style = MaterialTheme.typography.bodyMedium) },
+                leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null, tint = MaterialTheme.colorScheme.outline) },
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
@@ -2950,233 +2796,111 @@ fun TutoriasScreen(role: UserRole) {
                     focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
                     unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow
                 ),
+                modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                contentPadding = PaddingValues(bottom = 80.dp),
-                modifier = Modifier.fillMaxSize()
-            ) {
-                items(filteredRequests) { request ->
-                    TutorRequestCard(request = request, role = role)
-                }
-            }
         }
-    }
+        Spacer(modifier = Modifier.height(16.dp))
 
-    if (showForm) {
-        PostFormDialog(
-            role = role,
-            onDismiss = { showForm = false },
-            onPost = { newRequest ->
-                allRequests.add(0, newRequest)
-                showForm = false
-            }
-        )
-    }
-}
-
-data class TutorRequest(
-    val studentName: String,
-    val subject: String,
-    val time: String,
-    val isToday: Boolean,
-    val description: String,
-    val maxStudents: Int = 1
-)
-
-@Composable
-fun TutorRequestCard(request: TutorRequest, role: UserRole) {
-    Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
+        when (val state = chatsState) {
+            is ApiResult.Loading -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+            is ApiResult.Success -> {
+                val chats = state.data
+                LazyColumn(
+                    contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 96.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.secondaryContainer),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = request.studentName.first().toString(),
-                            style = MaterialTheme.typography.headlineSmall,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                    Column {
-                        Text(
-                            text = request.studentName,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Book,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(14.dp)
-                            )
-                            Text(
-                                text = request.subject,
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                        
-                        // Time below subject
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            modifier = Modifier.padding(top = 4.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Schedule, 
-                                contentDescription = null, 
-                                modifier = Modifier.size(12.dp), 
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = request.time,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                }
-                
-                if (role == UserRole.ESTUDIANTE && request.maxStudents > 1) {
-                    Badge(containerColor = MaterialTheme.colorScheme.primaryContainer) {
-                        Text("Cupos: ${request.maxStudents}")
+                    items(chats.filter { it.tutorName.contains(searchQuery, ignoreCase = true) || it.studentName.contains(searchQuery, ignoreCase = true) }) { chat ->
+                        ChatItemCard(chat = chat, onClick = { onChatClick(chat) })
                     }
                 }
             }
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            Text(
-                text = "\"" + request.description + "\"",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Button(
-                onClick = { /* Action */ },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp),
-                shape = RoundedCornerShape(99.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-            ) {
-                Text(
-                    text = if (role == UserRole.TUTOR) "Ofrecer ayuda" else "Unirse a clase",
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Bold
-                )
+            is ApiResult.Error -> {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("Error al cargar chats: ${state.message}", color = MaterialTheme.colorScheme.error)
+                }
             }
+            null -> Unit
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PostFormDialog(
-    role: UserRole,
-    onDismiss: () -> Unit,
-    onPost: (TutorRequest) -> Unit
-) {
-    var subject by remember { mutableStateOf("") }
-    var time by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
-    var maxStudents by remember { mutableStateOf("1") }
-
-    Dialog(onDismissRequest = onDismiss) {
-        Card(
-            shape = RoundedCornerShape(24.dp),
-            modifier = Modifier.fillMaxWidth().padding(16.dp)
+fun ChatItemCard(chat: Chat, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(elevation = 2.dp, shape = RoundedCornerShape(20.dp))
+            .clickable { onClick() },
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Column(
-                modifier = Modifier.padding(24.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+            val displayName = if (chat.tutorId == TokenManager.getUserId()) chat.studentName else chat.tutorName
+            Box(
+                modifier = Modifier
+                    .size(56.dp)
+                    .background(Color(0xFFE2E7ED), CircleShape),
+                contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = if (role == UserRole.TUTOR) "Ofrecer Tutoría" else "Solicitar Ayuda",
-                    style = MaterialTheme.typography.headlineSmall,
+                    displayName.first().toString(),
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontSize = 20.sp
+                )
+            }
+            
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    displayName,
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
-
-                OutlinedTextField(
-                    value = subject,
-                    onValueChange = { subject = it },
-                    label = { Text("Materia") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                OutlinedTextField(
-                    value = time,
-                    onValueChange = { time = it },
-                    label = { Text("Hora (ej. 15:30)") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                if (role == UserRole.TUTOR) {
-                    OutlinedTextField(
-                        value = maxStudents,
-                        onValueChange = { maxStudents = it },
-                        label = { Text("Cantidad de estudiantes") },
-                        modifier = Modifier.fillMaxWidth()
+                
+                if (chat.lastMessage != null) {
+                    Text(
+                        chat.lastMessage,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1
                     )
                 }
+            }
 
-                OutlinedTextField(
-                    value = description,
-                    onValueChange = { description = it },
-                    label = { Text("Descripción") },
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 3
+            // Date and Notification on the right
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = chat.lastMessageAt ?: "",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                
+                Spacer(modifier = Modifier.height(4.dp))
 
-                Button(
-                    onClick = {
-                        onPost(
-                            TutorRequest(
-                                studentName = "Yo",
-                                subject = subject,
-                                time = time,
-                                isToday = true,
-                                description = description,
-                                maxStudents = maxStudents.toIntOrNull() ?: 1
+                if (chat.unreadCount > 0) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.primary,
+                        shape = CircleShape,
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(
+                                chat.unreadCount.toString(),
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
                             )
-                        )
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(50)
-                ) {
-                    Text("Publicar")
+                        }
+                    }
                 }
             }
         }
@@ -3295,6 +3019,306 @@ kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "ko
 kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 </file>
 
+<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/navigation/AppNavigation.kt">
+package com.example.tutoruam_proyecto.ui.navigation
+
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.example.tutoruam_proyecto.ui.model.UserRole
+import com.example.tutoruam_proyecto.ui.screen.HomeScreen
+import com.example.tutoruam_proyecto.ui.screen.LoginScreen
+import com.example.tutoruam_proyecto.ui.screen.RegisterScreen
+import com.example.tutoruam_proyecto.ui.service.TokenManager
+
+@Composable
+fun AppNavigation(modifier: Modifier = Modifier) {
+    val navController = rememberNavController()
+
+    NavHost(
+        navController = navController,
+        startDestination = LoginDestination,
+        modifier = modifier.fillMaxSize()
+    ) {
+        composable<LoginDestination> {
+            LoginScreen(
+                onLoginSuccess = {
+                    navController.navigate(HomeDestination) {
+                        popUpTo(LoginDestination) { inclusive = true }
+                    }
+                },
+                onNavigateToRegister = {
+                    navController.navigate(RegisterDestination)
+                }
+            )
+        }
+
+        composable<RegisterDestination> {
+            RegisterScreen(
+                onRegisterSuccess = {
+                    navController.navigate(HomeDestination) {
+                        popUpTo(LoginDestination) { inclusive = true }
+                    }
+                },
+                onNavigateToLogin = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable<HomeDestination> {
+            var currentRole by remember {
+                mutableStateOf(if (TokenManager.getRole() == "TUTOR") UserRole.TUTOR else UserRole.ESTUDIANTE)
+            }
+
+            key(currentRole) {
+                HomeScreen(
+                    modifier = Modifier.fillMaxSize(),
+                    role = currentRole,
+                    onChangeRole = {
+                        val newRoleStr = TokenManager.getRole()
+                        currentRole = if (newRoleStr == "TUTOR") UserRole.TUTOR else UserRole.ESTUDIANTE
+                    },
+                    onLogout = {
+                        TokenManager.clear()
+                        navController.navigate(LoginDestination) {
+                            popUpTo(HomeDestination) { inclusive = true }
+                        }
+                    }
+                )
+            }
+        }
+    }
+}
+</file>
+
+<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/navigation/Navigation.kt">
+package com.example.tutoruam_proyecto.ui.navigation
+
+import kotlinx.serialization.Serializable
+
+// Rutas del flujo principal.
+@Serializable
+object LoginDestination
+
+@Serializable
+object RegisterDestination
+
+@Serializable
+object HomeDestination
+
+// Rutas de la barra inferior dentro de Home.
+@Serializable
+object TutoriasDestination
+
+@Serializable
+object ChatDestination
+
+@Serializable
+object PerfilDestination
+
+@Serializable
+data class ChatDetailDestination(val chatId: Long, val otherUserName: String)
+</file>
+
+<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/screen/HomeScreen.kt">
+package com.example.tutoruam_proyecto.ui.screen
+
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ChatBubble
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.School
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.navigation.NavDestination
+import androidx.navigation.NavDestination.Companion.hasRoute
+import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavHostController
+import androidx.navigation.toRoute
+import com.example.tutoruam_proyecto.ui.service.TokenManager
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+import com.example.tutoruam_proyecto.ui.model.UserRole
+import com.example.tutoruam_proyecto.ui.navigation.ChatDestination
+import com.example.tutoruam_proyecto.ui.navigation.ChatDetailDestination
+import com.example.tutoruam_proyecto.ui.navigation.PerfilDestination
+import com.example.tutoruam_proyecto.ui.navigation.TutoriasDestination
+
+@Composable
+fun HomeScreen(
+    modifier: Modifier = Modifier,
+    role: UserRole,
+    onChangeRole: () -> Unit,
+    onLogout: () -> Unit
+) {
+    val homeNavController = rememberNavController()
+    val currentDestination = homeNavController.currentBackStackEntryAsState().value?.destination
+
+    val items = listOf(
+        BottomItem(
+            label = "Tutoría",
+            icon = Icons.Rounded.School,
+            destination = TutoriasDestination,
+            isSelected = { dest -> dest?.hierarchy?.any { it.hasRoute<TutoriasDestination>() } == true }
+        ),
+        BottomItem(
+            label = "Chat",
+            icon = Icons.Rounded.ChatBubble,
+            destination = ChatDestination,
+            isSelected = { dest -> dest?.hierarchy?.any { it.hasRoute<ChatDestination>() } == true }
+        ),
+        BottomItem(
+            label = "Perfil",
+            icon = Icons.Rounded.Person,
+            destination = PerfilDestination,
+            isSelected = { dest -> dest?.hierarchy?.any { it.hasRoute<PerfilDestination>() } == true }
+        )
+    )
+
+    Scaffold(
+        modifier = modifier,
+        bottomBar = {
+            NavigationBar(
+                containerColor = MaterialTheme.colorScheme.surface,
+                modifier = Modifier.shadow(8.dp),
+                tonalElevation = 0.dp
+            ) {
+                items.forEach { item ->
+                    val selected = item.isSelected(currentDestination)
+
+                    NavigationBarItem(
+                        selected = selected,
+                        onClick = {
+                            homeNavController.navigate(item.destination) {
+                                popUpTo(homeNavController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
+                        icon = {
+                            Icon(
+                                item.icon,
+                                contentDescription = item.label,
+                                tint = if (selected) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        },
+                        label = {
+                            Text(
+                                item.label,
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                                color = if (selected) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        },
+                        colors = NavigationBarItemDefaults.colors(
+                            indicatorColor = MaterialTheme.colorScheme.secondaryContainer
+                        )
+                    )
+                }
+            }
+        }
+    ) { innerPadding ->
+        HomeNavHost(
+            modifier = Modifier.padding(innerPadding),
+            navController = homeNavController,
+            role = role,
+            onChangeRole = onChangeRole,
+            onLogout = onLogout
+        )
+    }
+}
+
+private data class BottomItem(
+    val label: String,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val destination: Any,
+    val isSelected: (NavDestination?) -> Boolean
+)
+
+@Composable
+private fun HomeNavHost(
+    modifier: Modifier,
+    navController: NavHostController,
+    role: UserRole,
+    onChangeRole: () -> Unit,
+    onLogout: () -> Unit
+) {
+    NavHost(
+        navController = navController,
+        startDestination = TutoriasDestination,
+        modifier = modifier,
+        enterTransition = { EnterTransition.None },
+        exitTransition = { ExitTransition.None },
+        popEnterTransition = { EnterTransition.None },
+        popExitTransition = { ExitTransition.None }
+    ) {
+        composable<TutoriasDestination> {
+            key(role) {
+                TutoriasScreen(
+                    role = role,
+                    onNavigateToChat = { chatId, otherName ->
+                        navController.navigate(ChatDetailDestination(chatId, otherName))
+                    }
+                )
+            }
+        }
+        composable<ChatDestination> {
+            ChatScreen(
+                onChatClick = { chat ->
+                    val otherName = if (chat.tutorId == TokenManager.getUserId()) chat.studentName else chat.tutorName
+                    navController.navigate(ChatDetailDestination(chat.id, otherName))
+                }
+            )
+        }
+        composable<ChatDetailDestination> { backStackEntry ->
+            val args = backStackEntry.toRoute<ChatDetailDestination>()
+            ChatDetailScreen(
+                chatId = args.chatId,
+                otherUserName = args.otherUserName,
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+        composable<PerfilDestination> {
+            val currentRole = if (TokenManager.getRole() == "TUTOR") UserRole.TUTOR else UserRole.ESTUDIANTE
+            PerfilScreen(
+                role = currentRole,
+                onChangeRole = onChangeRole,
+                onLogout = onLogout
+            )
+        }
+    }
+}
+</file>
+
 <file path="app/src/main/java/com/example/tutoruam_proyecto/ui/screen/LoginScreen.kt">
 package com.example.tutoruam_proyecto.ui.screen
 
@@ -3348,6 +3372,7 @@ import androidx.compose.ui.unit.sp
 import com.example.tutoruam_proyecto.ui.components.UamTextField
 import com.example.tutoruam_proyecto.ui.service.ApiResult
 import com.example.tutoruam_proyecto.ui.service.ServiceLocator
+import com.example.tutoruam_proyecto.ui.service.TokenManager
 import com.example.tutoruam_proyecto.ui.viewmodel.LoginViewModel
 import com.example.tutoruam_proyecto.ui.viewmodel.LoginViewModelFactory
 
@@ -3366,6 +3391,10 @@ fun LoginScreen(
     var errorMessage by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
     val loading = loginState is ApiResult.Loading
+
+    LaunchedEffect(Unit) {
+        TokenManager.clear() // 🔥 Limpia sesión anterior al abrir login
+    }
 
     LaunchedEffect(loginState) {
         when (val state = loginState) {
@@ -3546,6 +3575,737 @@ internal fun AuthHeader(subtitle: String) {
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center
     )
+}
+</file>
+
+<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/screen/PerfilScreen.kt">
+package com.example.tutoruam_proyecto.ui.screen
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material.icons.rounded.Logout
+import androidx.compose.material.icons.rounded.SwapHoriz
+import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.tutoruam_proyecto.ui.model.UserRole
+import com.example.tutoruam_proyecto.ui.service.ApiResult
+import com.example.tutoruam_proyecto.ui.service.ServiceLocator
+import com.example.tutoruam_proyecto.ui.service.TokenManager
+import com.example.tutoruam_proyecto.ui.viewmodel.PerfilViewModel
+import com.example.tutoruam_proyecto.ui.viewmodel.PerfilViewModelFactory
+import androidx.compose.runtime.*
+
+@Composable
+fun PerfilScreen(
+    role: UserRole,
+    onChangeRole: () -> Unit = {},
+    onLogout: () -> Unit = {}
+) {
+    val viewModel: PerfilViewModel = viewModel(
+        factory = PerfilViewModelFactory(ServiceLocator.authRepository)
+    )
+    val uiState by viewModel.uiState.collectAsState()
+    val scrollState = rememberScrollState()
+    val userName = TokenManager.getName()
+    val userEmail = TokenManager.getEmail()
+    
+    var showConfirmDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(uiState) {
+        if (uiState is ApiResult.Success) {
+            onChangeRole()
+            viewModel.clearState()
+        }
+    }
+
+    if (showConfirmDialog) {
+        val nextRole = if (role == UserRole.ESTUDIANTE) "TUTOR" else "ESTUDIANTE"
+        AlertDialog(
+            onDismissRequest = { showConfirmDialog = false },
+            title = { Text("Cambiar Rol") },
+            text = { Text("¿Estás seguro de que quieres cambiar tu rol a ${nextRole.lowercase()}?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.changeRole(nextRole)
+                    showConfirmDialog = false
+                }) { Text("Confirmar") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showConfirmDialog = false }) { Text("Cancelar") }
+            }
+        )
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFF8F9FB))
+            .verticalScroll(scrollState)
+            .padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally // Centering content
+    ) {
+        if (uiState is ApiResult.Loading) {
+            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+        }
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                "Tu Perfil",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Text(
+                "Información personal",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        Card(
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            modifier = Modifier
+                .fillMaxWidth()
+                .shadow(2.dp, RoundedCornerShape(24.dp))
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Profile Circle
+                Box(
+                    modifier = Modifier
+                        .size(100.dp)
+                        .background(MaterialTheme.colorScheme.secondaryContainer, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        userName.take(2).uppercase(),
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontSize = 32.sp
+                    )
+                }
+
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        userName,
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        userEmail,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                // Display Role Tag
+                Surface(
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    shape = RoundedCornerShape(50)
+                ) {
+                    Text(
+                        text = if (role == UserRole.TUTOR) "Tutor" else "Estudiante",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                    )
+                }
+            }
+        }
+
+        Column(
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                "Configuración",
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 4.dp)
+            )
+
+            ProfileListItem(
+                icon = Icons.Rounded.SwapHoriz,
+                title = "Cambiar rol",
+                iconBgColor = MaterialTheme.colorScheme.secondaryContainer,
+                iconColor = MaterialTheme.colorScheme.primary,
+                onClick = { showConfirmDialog = true }
+            )
+
+            ProfileListItem(
+                icon = Icons.Rounded.Logout,
+                title = "Cerrar sesión",
+                iconBgColor = MaterialTheme.colorScheme.errorContainer,
+                iconColor = MaterialTheme.colorScheme.error,
+                onClick = onLogout
+            )
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+    }
+}
+
+@Composable
+fun ProfileListItem(
+    icon: ImageVector,
+    title: String,
+    iconBgColor: Color,
+    iconColor: Color,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .shadow(1.dp, RoundedCornerShape(16.dp)),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(iconBgColor, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        icon,
+                        contentDescription = null,
+                        tint = iconColor,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                Text(
+                    title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+            Icon(
+                Icons.Rounded.ChevronRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.outline
+            )
+        }
+    }
+}
+</file>
+
+<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/screen/TutoriasScreen.kt">
+package com.example.tutoruam_proyecto.ui.screen
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Book
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.rounded.School
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.tutoruam_proyecto.ui.model.TutorClass
+import com.example.tutoruam_proyecto.ui.model.UserRole
+import com.example.tutoruam_proyecto.ui.service.ApiResult
+import com.example.tutoruam_proyecto.ui.service.ServiceLocator
+import com.example.tutoruam_proyecto.ui.viewmodel.TutoriasViewModel
+import com.example.tutoruam_proyecto.ui.viewmodel.TutoriasViewModelFactory
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TutoriasScreen(
+    role: UserRole,
+    onNavigateToChat: (Long, String) -> Unit = { _, _ -> }
+) {
+    val viewModel: TutoriasViewModel = viewModel(
+        factory = TutoriasViewModelFactory(
+            ServiceLocator.tutoriasRepository,
+            ServiceLocator.chatRepository,
+            role
+        )
+    )
+    val itemsState by viewModel.itemsState.collectAsState()
+    val actionState by viewModel.actionState.collectAsState()
+    
+    var searchQuery by remember { mutableStateOf("") }
+    var showForm by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(actionState) {
+        when (val state = actionState) {
+            is ApiResult.Success -> {
+                if (state.data is Pair<*, *>) {
+                    val data = state.data as Pair<Long, String>
+                    onNavigateToChat(data.first, data.second)
+                } else {
+                    snackbarHostState.showSnackbar("Operación exitosa")
+                }
+                viewModel.clearActionState()
+            }
+            is ApiResult.Error -> {
+                snackbarHostState.showSnackbar(state.message ?: "Error al procesar")
+                viewModel.clearActionState()
+            }
+            else -> Unit
+        }
+    }
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        topBar = {
+            TopAppBar(
+                title = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    Icons.Rounded.School,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                        Text(
+                            "Universidad Americana",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+            )
+        },
+        floatingActionButton = {
+            ExtendedFloatingActionButton(
+                onClick = { showForm = true },
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = Color.White,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.padding(bottom = 0.dp) // Bajado al máximo posible dentro del Scaffold
+            ) {
+                Icon(imageVector = Icons.Default.Add, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = if (role == UserRole.TUTOR) "Ofrecer ayuda" else "Pedir ayuda",
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xFFF8F9FB))
+                .padding(innerPadding)
+                .padding(horizontal = 20.dp)
+        ) {
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = if (role == UserRole.TUTOR) "Hola, Tutor" else "Hola, Estudiante",
+                style = MaterialTheme.typography.displayLarge.copy(fontSize = 24.sp),
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = if (role == UserRole.TUTOR) "¿A quién quieres ayudar hoy?" else "¿Qué quieres aprender hoy?",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { 
+                    searchQuery = it
+                    viewModel.loadData(it.takeIf { it.isNotBlank() })
+                },
+                placeholder = { Text("Buscar por materia...", style = MaterialTheme.typography.bodyMedium) },
+                leadingIcon = { Icon(imageVector = Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.outline) },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = Color.Transparent,
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                ),
+                singleLine = true
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            when (val state = itemsState) {
+                is ApiResult.Loading -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                }
+                is ApiResult.Error -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(text = state.message ?: "Error al cargar datos")
+                    }
+                }
+                is ApiResult.Success -> {
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        contentPadding = PaddingValues(bottom = 80.dp),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        items(state.data) { item ->
+                            TutorClassCard(
+                                item = item,
+                                role = role,
+                                onActionClick = {
+                                    if (role == UserRole.ESTUDIANTE) {
+                                        viewModel.joinClass(item.id, item.creatorName, item.creatorId)
+                                    } else {
+                                        // Tutor clicks on a request to offer help -> open chat or similar
+                                        viewModel.joinClass(item.id, item.creatorName, item.creatorId)
+                                    }
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (showForm) {
+        PostFormDialog(
+            role = role,
+            onDismiss = { showForm = false },
+            onPost = { subject, time, desc, max ->
+                viewModel.createPost(subject, time, desc, max)
+                showForm = false
+            }
+        )
+    }
+}
+
+@Composable
+fun TutorClassCard(
+    item: TutorClass,
+    role: UserRole,
+    onActionClick: () -> Unit
+) {
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Box(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.secondaryContainer),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = item.creatorName.firstOrNull()?.toString() ?: "?",
+                                style = MaterialTheme.typography.headlineSmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        Column {
+                            Text(
+                                text = item.creatorName,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Book,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Text(
+                                    text = item.subject,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            
+                            val displayTime = if (item.type == "CLASS") item.scheduledTime else item.timeLimit
+                            if (displayTime != null) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    modifier = Modifier.padding(top = 4.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Schedule, 
+                                        contentDescription = null, 
+                                        modifier = Modifier.size(12.dp), 
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Text(
+                                        text = displayTime,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                Text(
+                    text = "\"" + item.description + "\"",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(
+                    onClick = onActionClick,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                    shape = RoundedCornerShape(99.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                ) {
+                    Text(
+                        text = if (item.type == "CLASS") {
+                            if (role == UserRole.TUTOR) "Ver clase" else "Unirse a clase"
+                        } else {
+                            if (role == UserRole.TUTOR) "Ofrecer ayuda" else "Ver solicitud"
+                        },
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
+            // Cupos en la esquina
+            if (item.type == "CLASS" && item.maxStudents != null && item.maxStudents > 1) {
+                Text(
+                    text = "Cupos: ${item.currentStudents ?: 0}/${item.maxStudents}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.Black,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(16.dp)
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PostFormDialog(
+    role: UserRole,
+    onDismiss: () -> Unit,
+    onPost: (String, String, String, Int) -> Unit
+) {
+    var subject by remember { mutableStateOf("") }
+    var time by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+    var maxStudents by remember { mutableStateOf("1") }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            shape = RoundedCornerShape(24.dp),
+            modifier = Modifier.fillMaxWidth().padding(16.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    text = if (role == UserRole.TUTOR) "Ofrecer Tutoría" else "Solicitar Ayuda",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
+                )
+
+                OutlinedTextField(
+                    value = subject,
+                    onValueChange = { subject = it; errorMessage = null },
+                    label = { Text("Materia") },
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = errorMessage != null && errorMessage!!.contains("materia")
+                )
+
+                OutlinedTextField(
+                    value = time,
+                    onValueChange = { time = it; errorMessage = null },
+                    label = { Text("Hora (ej. 15:30)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = errorMessage != null && errorMessage!!.contains("hora"),
+                    placeholder = { Text("15:30") }
+                )
+
+                if (role == UserRole.TUTOR) {
+                    OutlinedTextField(
+                        value = maxStudents,
+                        onValueChange = { maxStudents = it; errorMessage = null },
+                        label = { Text("Cantidad de estudiantes") },
+                        modifier = Modifier.fillMaxWidth(),
+                        isError = errorMessage != null && errorMessage!!.contains("estudiantes")
+                    )
+                }
+
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it; errorMessage = null },
+                    label = { Text("Descripción") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 3,
+                    isError = errorMessage != null && errorMessage!!.contains("descripción")
+                )
+
+                if (errorMessage != null) {
+                    Text(
+                        text = errorMessage!!,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+
+                Button(
+                    onClick = {
+                        // Limpiar error previo
+                        errorMessage = null
+
+                        // Validaciones
+                        if (subject.isBlank()) {
+                            errorMessage = "La materia es obligatoria"
+                            return@Button
+                        }
+                        if (time.isBlank()) {
+                            errorMessage = "La hora es obligatoria"
+                            return@Button
+                        }
+                        if (description.isBlank()) {
+                            errorMessage = "La descripción es obligatoria"
+                            return@Button
+                        }
+
+                        // Parsear hora
+                        val formattedTime = try {
+                            val timePart = LocalTime.parse(time, DateTimeFormatter.ofPattern("HH:mm"))
+                            val dateTime = LocalDateTime.of(LocalDate.now(), timePart)
+                            dateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                        } catch (e: Exception) {
+                            errorMessage = "Formato de hora inválido. Usa HH:mm (ej. 15:30)"
+                            return@Button
+                        }
+
+                        // Validar cantidad de estudiantes (solo para tutor)
+                        val max = if (role == UserRole.TUTOR) {
+                            maxStudents.toIntOrNull()
+                        } else {
+                            1 // Los estudiantes no envían maxStudents
+                        }
+
+                        if (role == UserRole.TUTOR && (max == null || max <= 0)) {
+                            errorMessage = "La cantidad de estudiantes debe ser un número positivo"
+                            return@Button
+                        }
+
+                        // Enviar datos
+                        onPost(
+                            subject,
+                            formattedTime,
+                            description,
+                            max ?: 1
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(50)
+                ) {
+                    Text("Publicar")
+                }
+            }
+        }
+    }
 }
 </file>
 

@@ -222,37 +222,6 @@ fun RegisterScreen(
                         }
                     )
 
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Text(
-                        text = "Registrarse como:",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.align(Alignment.Start)
-                    )
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(
-                            selected = selectedRole == "ESTUDIANTE",
-                            onClick = { selectedRole = "ESTUDIANTE" }
-                        )
-                        Text(
-                            text = "Estudiante",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        Spacer(modifier = Modifier.width(16.dp))
-                        RadioButton(
-                            selected = selectedRole == "TUTOR",
-                            onClick = { selectedRole = "TUTOR" }
-                        )
-                        Text(
-                            text = "Tutor",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-
                     Spacer(modifier = Modifier.height(32.dp))
 
                     Button(

@@ -7,4 +7,5 @@ import com.example.tutoruam_proyecto.ui.service.ApiResult
 interface AuthRepository {
     suspend fun login(email: String, password: String): ApiResult<LoginResponse>
     suspend fun register(request: RegisterRequest): ApiResult<LoginResponse>
+    suspend fun changeRole(newRole: String): ApiResult<Unit>
 }
