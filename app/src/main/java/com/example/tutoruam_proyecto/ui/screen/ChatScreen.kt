@@ -27,15 +27,31 @@ import com.example.tutoruam_proyecto.ui.viewmodel.ChatViewModel
 import com.example.tutoruam_proyecto.ui.viewmodel.ChatViewModelFactory
 import com.example.tutoruam_proyecto.ui.utils.DateUtils
 
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.compose.ui.platform.LocalLifecycleOwner
+
 @Composable
 fun ChatScreen(
     onChatClick: (Chat) -> Unit,
     viewModel: ChatViewModel = viewModel(factory = ChatViewModelFactory(ServiceLocator.chatRepository))
 ) {
     val chatsState by viewModel.chatsState.collectAsState()
+    val refreshTrigger by viewModel.refreshTrigger.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
 
-    LaunchedEffect(Unit) {
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.loadChats()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    LaunchedEffect(refreshTrigger) {
         viewModel.loadChats()
     }
 
@@ -78,14 +94,23 @@ fun ChatScreen(
                     contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 96.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    items(chats.filter { it.tutorName.contains(searchQuery, ignoreCase = true) || it.studentName.contains(searchQuery, ignoreCase = true) }) { chat ->
+                    val filteredChats = chats.filter {
+                        val name = if (it.isGroup) it.groupName else (if (it.tutorId == TokenManager.getUserId()) it.studentName else it.tutorName)
+                        name?.contains(searchQuery, ignoreCase = true) == true
+                    }
+                    items(filteredChats) { chat ->
                         ChatItemCard(chat = chat, onClick = { onChatClick(chat) })
                     }
                 }
             }
             is ApiResult.Error -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Error al cargar chats: ${state.message}", color = MaterialTheme.colorScheme.error)
+                    val errorMsg = if (state.code == 500) {
+                        "Error en el servidor al cargar chats. Inténtalo más tarde."
+                    } else {
+                        "Error al cargar chats: ${state.message}"
+                    }
+                    Text(errorMsg, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(20.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                 }
             }
             null -> Unit
@@ -110,11 +135,15 @@ fun ChatItemCard(chat: Chat, onClick: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            val displayName = if (chat.tutorId == TokenManager.getUserId()) chat.studentName else chat.tutorName
+            val displayName = if (chat.isGroup) {
+                chat.groupName ?: "Grupo"
+            } else {
+                if (chat.tutorId == TokenManager.getUserId()) chat.studentName ?: "Estudiante" else chat.tutorName ?: "Tutor"
+            }
             Box(
                 modifier = Modifier
                     .size(56.dp)
-                    .background(Color(0xFFE2E7ED), CircleShape),
+                    .background(if (chat.isGroup) MaterialTheme.colorScheme.secondaryContainer else Color(0xFFE2E7ED), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Text(

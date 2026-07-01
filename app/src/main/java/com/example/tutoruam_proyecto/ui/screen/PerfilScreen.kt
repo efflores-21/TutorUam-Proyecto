@@ -6,9 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ChevronRight
-import androidx.compose.material.icons.rounded.Logout
-import androidx.compose.material.icons.rounded.SwapHoriz
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,21 +24,51 @@ import com.example.tutoruam_proyecto.ui.service.ServiceLocator
 import com.example.tutoruam_proyecto.ui.service.TokenManager
 import com.example.tutoruam_proyecto.ui.viewmodel.PerfilViewModel
 import com.example.tutoruam_proyecto.ui.viewmodel.PerfilViewModelFactory
+import com.example.tutoruam_proyecto.ui.viewmodel.RatingViewModel
+import com.example.tutoruam_proyecto.ui.viewmodel.RatingViewModelFactory
+
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 
 @Composable
 fun PerfilScreen(
     role: UserRole,
+    userId: Long? = null, // ID del usuario a visualizar (null si es el propio)
     onChangeRole: () -> Unit = {},
-    onLogout: () -> Unit = {}
+    onLogout: () -> Unit = {},
+    onNavigateToChat: (Long, String) -> Unit = { _, _ -> },
+    onNavigateToMyPosts: () -> Unit = {},
+    onNavigateToMyTutorias: () -> Unit = {},
+    onNavigateToMyClasses: () -> Unit = {}
 ) {
     val viewModel: PerfilViewModel = viewModel(
         factory = PerfilViewModelFactory(ServiceLocator.authRepository)
     )
     val uiState by viewModel.uiState.collectAsState()
-    val userName = TokenManager.getName()
-    val userEmail = TokenManager.getEmail()
+
+    val ratingViewModel: RatingViewModel = viewModel(
+        factory = RatingViewModelFactory(ServiceLocator.ratingRepository)
+    )
+    val averageState by ratingViewModel.averageState.collectAsState()
+    
+    // Si userId es null o igual al actual, es mi perfil
+    val isMyProfile = userId == null || userId == TokenManager.getUserId()
+    
+    // Aquí idealmente cargarías los datos del usuario si userId != null
+    // Por ahora asumimos que los datos del TokenManager son para "mi perfil"
+    val userName = if (isMyProfile) TokenManager.getName() else "Usuario $userId"
+    val userEmail = if (isMyProfile) TokenManager.getEmail() else ""
+    val userRole = if (isMyProfile) role else UserRole.TUTOR // Mock para otros perfiles
     
     var showConfirmDialog by remember { mutableStateOf(false) }
+
+    // Cargar rating si es un tutor (y no es el propio perfil, o si es el propio perfil y es tutor)
+    if (!isMyProfile || role == UserRole.TUTOR) {
+        val targetId = userId ?: TokenManager.getUserId()
+        LaunchedEffect(targetId) {
+            targetId?.let { ratingViewModel.loadAverage(it) }
+        }
+    }
 
     LaunchedEffect(uiState) {
         if (uiState is ApiResult.Success) {
@@ -67,19 +95,18 @@ fun PerfilScreen(
         )
     }
 
-    // 🔥 Box + Column para centrar todo perfectamente
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF8F9FB)),
-        contentAlignment = Alignment.Center
+            .background(Color(0xFFF8F9FB))
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
                 .padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Top
         ) {
             if (uiState is ApiResult.Loading) {
                 LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
@@ -141,6 +168,19 @@ fun PerfilScreen(
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+
+                        if (averageState is ApiResult.Success) {
+                            val avg = (averageState as ApiResult.Success<Double>).data
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Rounded.Star, contentDescription = null, tint = Color(0xFFFFB300), modifier = Modifier.size(20.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    "%.1f".format(avg),
+                                    fontWeight = FontWeight.Bold,
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                            }
+                        }
                     }
 
                     Surface(
@@ -148,45 +188,87 @@ fun PerfilScreen(
                         shape = RoundedCornerShape(50)
                     ) {
                         Text(
-                            text = if (role == UserRole.TUTOR) "Tutor" else "Estudiante",
+                            text = if (isMyProfile) (if (role == UserRole.TUTOR) "Tutor" else "Estudiante") else "Tutor",
                             style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onPrimaryContainer,
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                         )
                     }
+
+                    if (!isMyProfile) {
+                        Button(
+                            onClick = {
+                                userId?.let { id ->
+                                    viewModel.startChatWithUser(id) { chat ->
+                                        onNavigateToChat(chat.id, chat.tutorName ?: chat.studentName ?: "Chat")
+                                    }
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(Icons.Rounded.SwapHoriz, contentDescription = null) // Cambiar por icono de chat
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Iniciar chat")
+                        }
+                    }
                 }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            Column(
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    "Configuración",
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 4.dp)
-                )
+            if (isMyProfile) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        "Configuración",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = 4.dp)
+                    )
 
-                ProfileListItem(
-                    icon = Icons.Rounded.SwapHoriz,
-                    title = "Cambiar rol",
-                    iconBgColor = MaterialTheme.colorScheme.secondaryContainer,
-                    iconColor = MaterialTheme.colorScheme.primary,
-                    onClick = { showConfirmDialog = true }
-                )
+                    ProfileListItem(
+                        icon = Icons.Rounded.School,
+                        title = "Mis publicaciones",
+                        iconBgColor = MaterialTheme.colorScheme.primaryContainer,
+                        iconColor = MaterialTheme.colorScheme.primary,
+                        onClick = onNavigateToMyPosts
+                    )
 
-                ProfileListItem(
-                    icon = Icons.Rounded.Logout,
-                    title = "Cerrar sesión",
-                    iconBgColor = MaterialTheme.colorScheme.errorContainer,
-                    iconColor = MaterialTheme.colorScheme.error,
-                    onClick = onLogout
-                )
+                    ProfileListItem(
+                        icon = Icons.Rounded.School,
+                        title = if (role == UserRole.TUTOR) "Mis tutorías" else "Mis clases",
+                        iconBgColor = MaterialTheme.colorScheme.tertiaryContainer,
+                        iconColor = MaterialTheme.colorScheme.tertiary,
+                        onClick = {
+                            if (role == UserRole.TUTOR) {
+                                onNavigateToMyTutorias()
+                            } else {
+                                onNavigateToMyClasses()
+                            }
+                        }
+                    )
+
+                    ProfileListItem(
+                        icon = Icons.Rounded.SwapHoriz,
+                        title = "Cambiar rol",
+                        iconBgColor = MaterialTheme.colorScheme.secondaryContainer,
+                        iconColor = MaterialTheme.colorScheme.primary,
+                        onClick = { showConfirmDialog = true }
+                    )
+
+                    ProfileListItem(
+                        icon = Icons.Rounded.Logout,
+                        title = "Cerrar sesión",
+                        iconBgColor = MaterialTheme.colorScheme.errorContainer,
+                        iconColor = MaterialTheme.colorScheme.error,
+                        onClick = onLogout
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))

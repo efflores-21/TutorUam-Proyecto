@@ -9,8 +9,11 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
 
-    private const val BASE_URL = "http://192.168.1.14:8082/api/v1/"
-    private const val TIMEOUT = 10L
+    // ip uni 192.168.56.1
+    // IP casa: 192.168.1.14
+    // IP para emulador Android: 10.0.2.2
+    private const val  BASE_URL = "http://10.0.2.2:8082/api/v1/"
+    private const val TIMEOUT = 15L // Aumentado ligeramente para redes locales
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = if (BuildConfig.DEBUG) {
@@ -30,14 +33,13 @@ object RetrofitClient {
             val url = request.url.toString()
 
             // Solo agregar token si NO es una petición de autenticación
+            val requestBuilder = request.newBuilder()
             if (!url.contains("/auth/")) {
                 TokenManager.getToken()?.let { token ->
-                    val requestBuilder = request.newBuilder()
-                        .addHeader("Authorization", "Bearer $token")
-                    return@addInterceptor chain.proceed(requestBuilder.build())
+                    requestBuilder.addHeader("Authorization", "Bearer $token")
                 }
             }
-            chain.proceed(request)
+            chain.proceed(requestBuilder.build())
         }
         .build()
 

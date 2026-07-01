@@ -20,6 +20,13 @@ class ChatViewModel(
     private val _chatsState = MutableStateFlow<ApiResult<List<Chat>>?>(null)
     val chatsState: StateFlow<ApiResult<List<Chat>>?> = _chatsState.asStateFlow()
 
+    private val _refreshTrigger = MutableStateFlow(0)
+    val refreshTrigger: StateFlow<Int> = _refreshTrigger.asStateFlow()
+
+    fun refreshChats() {
+        _refreshTrigger.value++
+    }
+
     private val _messagesState = MutableStateFlow<ApiResult<List<Message>>?>(null)
     val messagesState: StateFlow<ApiResult<List<Message>>?> = _messagesState.asStateFlow()
 

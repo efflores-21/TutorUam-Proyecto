@@ -19,4 +19,8 @@ object ServiceLocator {
     val tutoriasRepository: TutoriasRepository by lazy {
         TutoriasRepositoryImpl(apiService)
     }
+
+    val ratingRepository: RatingRepository by lazy {
+        RatingRepositoryImpl(apiService)
+    }
 }

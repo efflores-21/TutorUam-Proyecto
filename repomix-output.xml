@@ -52,9 +52,11 @@ app/src/main/java/com/example/tutoruam_proyecto/ui/model/Chat.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/model/LoginRequest.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/model/LoginResponse.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/model/Message.kt
+app/src/main/java/com/example/tutoruam_proyecto/ui/model/Rating.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/model/RegisterRequest.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/model/TutorClass.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/model/TutorResponse.kt
+app/src/main/java/com/example/tutoruam_proyecto/ui/model/UpdateClassStatusRequest.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/model/UserRole.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/navigation/AppNavigation.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/navigation/Navigation.kt
@@ -62,12 +64,18 @@ app/src/main/java/com/example/tutoruam_proyecto/ui/repository/AuthRepository.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/repository/AuthRepositoryImpl.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/repository/ChatRepository.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/repository/ChatRepositoryImpl.kt
+app/src/main/java/com/example/tutoruam_proyecto/ui/repository/RatingRepository.kt
+app/src/main/java/com/example/tutoruam_proyecto/ui/repository/RatingRepositoryImpl.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/repository/TutoriasRepository.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/repository/TutoriasRepositoryImpl.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/screen/ChatDetailScreen.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/screen/ChatScreen.kt
+app/src/main/java/com/example/tutoruam_proyecto/ui/screen/ClassDetailScreen.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/screen/HomeScreen.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/screen/LoginScreen.kt
+app/src/main/java/com/example/tutoruam_proyecto/ui/screen/MyClassesScreen.kt
+app/src/main/java/com/example/tutoruam_proyecto/ui/screen/MyPostsScreen.kt
+app/src/main/java/com/example/tutoruam_proyecto/ui/screen/MyTutoriasScreen.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/screen/PerfilScreen.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/screen/RegisterScreen.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/screen/TutoriasScreen.kt
@@ -79,11 +87,13 @@ app/src/main/java/com/example/tutoruam_proyecto/ui/service/TokenManager.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/theme/Color.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/theme/Theme.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/theme/Type.kt
+app/src/main/java/com/example/tutoruam_proyecto/ui/utils/DateUtils.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/viewmodel/ChatViewModel.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/viewmodel/ChatViewModelFactory.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/viewmodel/LoginViewModel.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/viewmodel/LoginViewModelFactory.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/viewmodel/PerfilViewModel.kt
+app/src/main/java/com/example/tutoruam_proyecto/ui/viewmodel/RatingViewModel.kt
 app/src/main/java/com/example/tutoruam_proyecto/ui/viewmodel/TutoriasViewModel.kt
 app/src/main/res/drawable/ic_launcher_background.xml
 app/src/main/res/drawable/ic_launcher_foreground.xml
@@ -119,44 +129,1160 @@ settings.gradle.kts
 <files>
 This section contains the contents of the repository's files.
 
-<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/viewmodel/PerfilViewModel.kt">
+<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/model/Rating.kt">
+package com.example.tutoruam_proyecto.ui.model
+
+data class Rating(
+    val id: Long,
+    val tutorId: Long,
+    val tutorName: String,
+    val studentId: Long,
+    val studentName: String,
+    val score: Int,
+    val comment: String?,
+    val createdAt: String
+)
+
+data class RatingRequest(
+    val classSessionId: Long,
+    val score: Int,
+    val comment: String?
+)
+</file>
+
+<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/model/UpdateClassStatusRequest.kt">
+package com.example.tutoruam_proyecto.ui.model
+
+data class UpdateClassStatusRequest(
+    val status: String // "OPEN", "CLOSED", "CANCELLED"
+)
+</file>
+
+<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/repository/RatingRepository.kt">
+package com.example.tutoruam_proyecto.ui.repository
+
+import com.example.tutoruam_proyecto.ui.model.Rating
+import com.example.tutoruam_proyecto.ui.model.RatingRequest
+import com.example.tutoruam_proyecto.ui.service.ApiResult
+
+interface RatingRepository {
+    suspend fun createRating(request: RatingRequest): ApiResult<Rating>
+    suspend fun getRatingsByTutor(tutorId: Long): ApiResult<List<Rating>>
+    suspend fun getAverageRating(tutorId: Long): ApiResult<Double>
+}
+</file>
+
+<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/repository/RatingRepositoryImpl.kt">
+package com.example.tutoruam_proyecto.ui.repository
+
+import com.example.tutoruam_proyecto.ui.model.Rating
+import com.example.tutoruam_proyecto.ui.model.RatingRequest
+import com.example.tutoruam_proyecto.ui.service.ApiResult
+import com.example.tutoruam_proyecto.ui.service.ApiService
+import java.io.IOException
+
+class RatingRepositoryImpl(
+    private val apiService: ApiService
+) : RatingRepository {
+
+    override suspend fun createRating(request: RatingRequest): ApiResult<Rating> {
+        return executeRequest { apiService.createRating(request) }
+    }
+
+    override suspend fun getRatingsByTutor(tutorId: Long): ApiResult<List<Rating>> {
+        return executeRequest { apiService.getRatingsByTutor(tutorId) }
+    }
+
+    override suspend fun getAverageRating(tutorId: Long): ApiResult<Double> {
+        return executeRequest { apiService.getAverageRating(tutorId) }
+    }
+
+    private suspend fun <T> executeRequest(
+        request: suspend () -> retrofit2.Response<T>
+    ): ApiResult<T> {
+        return try {
+            val response = request()
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null) ApiResult.Success(body)
+                else ApiResult.Error(message = "Respuesta vacía")
+            } else {
+                ApiResult.Error(
+                    code = response.code(),
+                    message = response.errorBody()?.string() ?: "Error"
+                )
+            }
+        } catch (e: IOException) {
+            ApiResult.Error(message = "Sin conexión", exception = e)
+        } catch (e: Exception) {
+            ApiResult.Error(message = e.message ?: "Error", exception = e)
+        }
+    }
+}
+</file>
+
+<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/screen/ClassDetailScreen.kt">
+package com.example.tutoruam_proyecto.ui.screen
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import com.example.tutoruam_proyecto.ui.model.Chat
+import com.example.tutoruam_proyecto.ui.model.UserProfile
+import com.example.tutoruam_proyecto.ui.model.UserRole
+import com.example.tutoruam_proyecto.ui.model.TutorClass
+import com.example.tutoruam_proyecto.ui.service.ApiResult
+import com.example.tutoruam_proyecto.ui.service.ServiceLocator
+import com.example.tutoruam_proyecto.ui.service.TokenManager
+import com.example.tutoruam_proyecto.ui.viewmodel.TutoriasViewModel
+import com.example.tutoruam_proyecto.ui.viewmodel.TutoriasViewModelFactory
+import com.example.tutoruam_proyecto.ui.utils.DateUtils
+import kotlinx.coroutines.launch
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ClassDetailScreen(
+    classId: Long,
+    role: UserRole,
+    onBack: () -> Unit,
+    onNavigateToChat: (Long, String) -> Unit,
+    onNavigateToEdit: (Long) -> Unit = {} // para editar desde detalles
+) {
+    val viewModel: TutoriasViewModel = viewModel(
+        factory = TutoriasViewModelFactory(
+            ServiceLocator.tutoriasRepository,
+            ServiceLocator.chatRepository,
+            ServiceLocator.authRepository,
+            role
+        )
+    )
+
+    val classState by viewModel.classDetailState.collectAsState()
+    val studentsState by viewModel.classStudentsState.collectAsState()
+    val actionState by viewModel.actionState.collectAsState()
+    val currentUserId = TokenManager.getUserId()
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+    var showConfirmDialog by remember { mutableStateOf(false) }
+    var confirmAction by remember { mutableStateOf<(() -> Unit)?>(null) }
+
+    LaunchedEffect(classId) {
+        viewModel.loadClassDetail(classId)
+        viewModel.loadClassStudents(classId)
+    }
+
+    LaunchedEffect(actionState) {
+        when (val state = actionState) {
+            is ApiResult.Success -> {
+                snackbarHostState.showSnackbar("Operación exitosa")
+                viewModel.clearActionState()
+                // recargar detalles y estudiantes
+                viewModel.loadClassDetail(classId)
+                viewModel.loadClassStudents(classId)
+            }
+            is ApiResult.Error -> {
+                snackbarHostState.showSnackbar(state.message ?: "Error al procesar")
+                viewModel.clearActionState()
+            }
+            else -> Unit
+        }
+    }
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        topBar = {
+            TopAppBar(
+                title = { Text("Detalle de clase", fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+            )
+        }
+    ) { innerPadding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .background(Color(0xFFF8F9FB))
+        ) {
+            when (val state = classState) {
+                is ApiResult.Loading -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                }
+                is ApiResult.Error -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("Error al cargar la clase: ${state.message}")
+                    }
+                }
+                is ApiResult.Success -> {
+                    val classItem = state.data
+                    val isTutorOfClass = role == UserRole.TUTOR && classItem.creatorId == currentUserId
+
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        // Información principal
+                        item {
+                            Card(
+                                shape = RoundedCornerShape(16.dp),
+                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    Text(
+                                        text = classItem.subject,
+                                        style = MaterialTheme.typography.headlineMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                    Text(
+                                        text = "Creado por: ${classItem.creatorName}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Text(
+                                        text = "Descripción: ${classItem.description}",
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                    if (classItem.scheduledTime != null) {
+                                        Text(
+                                            text = "Fecha: ${DateUtils.formatDate(classItem.scheduledTime)}",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = "Estado: ${classItem.status ?: "OPEN"}",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = if (classItem.status == "OPEN") Color(0xFF2E7D32) else Color(0xFFD32F2F)
+                                        )
+                                        Text(
+                                            text = "Cupos: ${classItem.currentStudents}/${classItem.maxStudents}",
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        // Botones de acción para el tutor
+                        if (isTutorOfClass) {
+                            item {
+                                Card(
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            Button(
+                                                onClick = { onNavigateToEdit(classId) },
+                                                modifier = Modifier.weight(1f),
+                                                shape = RoundedCornerShape(12.dp)
+                                            ) {
+                                                Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text("Editar")
+                                            }
+                                            Button(
+                                                onClick = {
+                                                    confirmAction = { viewModel.toggleClassStatus(classId, classItem.status ?: "OPEN") }
+                                                    showConfirmDialog = true
+                                                },
+                                                modifier = Modifier.weight(1f),
+                                                shape = RoundedCornerShape(12.dp),
+                                                colors = ButtonDefaults.buttonColors(
+                                                    containerColor = if (classItem.status == "OPEN") Color(0xFFD32F2F) else Color(0xFF2E7D32)
+                                                )
+                                            ) {
+                                                Icon(if (classItem.status == "OPEN") Icons.Default.Lock else Icons.Default.LockOpen, contentDescription = null)
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text(if (classItem.status == "OPEN") "Cerrar" else "Abrir")
+                                            }
+                                        }
+                                        Button(
+                                            onClick = {
+                                                viewModel.createGroupChatForClass(classId) { chat ->
+                                                    onNavigateToChat(chat.id, chat.groupName ?: "Chat grupal")
+                                                }
+                                            },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            shape = RoundedCornerShape(12.dp),
+                                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+                                        ) {
+                                            Icon(Icons.Default.Group, contentDescription = null)
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text("Crear / Ir al chat grupal")
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Lista de estudiantes
+                        item {
+                            Text(
+                                text = "Estudiantes inscritos (${classItem.currentStudents ?: 0}/${classItem.maxStudents ?: 0})",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        when (val stState = studentsState) {
+                            is ApiResult.Loading -> {
+                                item { Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { CircularProgressIndicator() } }
+                            }
+                            is ApiResult.Error -> {
+                                item { Text("Error al cargar estudiantes") }
+                            }
+                            is ApiResult.Success -> {
+                                if (stState.data.isEmpty()) {
+                                    item { Text("Aún no hay estudiantes inscritos", style = MaterialTheme.typography.bodyMedium, color = Color.Gray) }
+                                } else {
+                                    items(stState.data) { student ->
+                                        StudentItem(
+                                            student = student,
+                                            showRemove = isTutorOfClass,
+                                            onRemove = {
+                                                confirmAction = { viewModel.expelStudent(classId, student.id) }
+                                                showConfirmDialog = true
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        // Botón para el estudiante: unirse a la clase (si no está inscrito)
+                        if (role == UserRole.ESTUDIANTE && classItem.creatorId != currentUserId) {
+                            item {
+                                val isEnrolled = studentsState is ApiResult.Success &&
+                                        (studentsState as ApiResult.Success<List<UserProfile>>).data.any { it.id == currentUserId }
+                                if (!isEnrolled && classItem.status != "CLOSED") {
+                                    Button(
+                                        onClick = {
+                                            viewModel.joinClass(classId, classItem.creatorName, classItem.creatorId)
+                                        },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(12.dp)
+                                    ) {
+                                        Text("Inscribirse a la clase")
+                                    }
+                                } else if (isEnrolled) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Button(
+                                            onClick = {
+                                                viewModel.getGroupChatForClass(classId) { chat ->
+                                                    onNavigateToChat(chat.id, chat.groupName ?: "Chat Grupal")
+                                                }
+                                            },
+                                            modifier = Modifier.weight(1f),
+                                            shape = RoundedCornerShape(12.dp),
+                                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+                                        ) {
+                                            Icon(Icons.Default.Groups, contentDescription = null)
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text("Chat Grupal")
+                                        }
+                                        Button(
+                                            onClick = {
+                                                viewModel.getChatWithCreator(classId, classItem.creatorId) { chat ->
+                                                    onNavigateToChat(chat.id, chat.tutorName ?: chat.studentName ?: "Chat")
+                                                }
+                                            },
+                                            modifier = Modifier.weight(1f),
+                                            shape = RoundedCornerShape(12.dp)
+                                        ) {
+                                            Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = null)
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text("Tutor")
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (showConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showConfirmDialog = false },
+            title = { Text("Confirmar acción") },
+            text = { Text("¿Estás seguro de realizar esta acción?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        confirmAction?.invoke()
+                        showConfirmDialog = false
+                    }
+                ) {
+                    Text("Confirmar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showConfirmDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+}
+
+@Composable
+private fun StudentItem(
+    student: UserProfile,
+    showRemove: Boolean,
+    onRemove: () -> Unit
+) {
+    Card(
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.secondaryContainer),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        student.name.take(1).uppercase(),
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(text = student.name, style = MaterialTheme.typography.bodyMedium)
+            }
+            if (showRemove) {
+                IconButton(onClick = onRemove) {
+                    Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = Color.Red)
+                }
+            }
+        }
+    }
+}
+</file>
+
+<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/screen/MyClassesScreen.kt">
+package com.example.tutoruam_proyecto.ui.screen
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.tutoruam_proyecto.ui.model.TutorClass
+import com.example.tutoruam_proyecto.ui.model.UserRole
+import com.example.tutoruam_proyecto.ui.service.ApiResult
+import com.example.tutoruam_proyecto.ui.service.ServiceLocator
+import com.example.tutoruam_proyecto.ui.viewmodel.TutoriasViewModel
+import com.example.tutoruam_proyecto.ui.viewmodel.TutoriasViewModelFactory
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.unit.sp
+import com.example.tutoruam_proyecto.ui.utils.DateUtils
+import com.example.tutoruam_proyecto.ui.model.RatingRequest
+import com.example.tutoruam_proyecto.ui.viewmodel.RatingViewModel
+import com.example.tutoruam_proyecto.ui.viewmodel.RatingViewModelFactory
+import kotlin.math.roundToInt
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MyClassesScreen(
+    onBack: () -> Unit,
+    onNavigateToDetail: (Long) -> Unit
+) {
+    val viewModel: TutoriasViewModel = viewModel(
+        factory = TutoriasViewModelFactory(
+            ServiceLocator.tutoriasRepository,
+            ServiceLocator.chatRepository,
+            ServiceLocator.authRepository,
+            UserRole.ESTUDIANTE
+        )
+    )
+    val state by viewModel.myClassesState.collectAsState()
+
+    var showRatingDialog by remember { mutableStateOf(false) }
+    var selectedClassId by remember { mutableStateOf<Long?>(null) }
+
+    LaunchedEffect(Unit) {
+        viewModel.loadMyClasses()
+    }
+
+    if (showRatingDialog && selectedClassId != null) {
+        RatingDialog(
+            classSessionId = selectedClassId!!,
+            onDismiss = { showRatingDialog = false },
+            onRatingSubmitted = {
+                // Podrías recargar o mostrar un mensaje
+            }
+        )
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Mis Clases", fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+            )
+        }
+    ) { innerPadding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xFFF8F9FB))
+                .padding(innerPadding)
+        ) {
+            when (val s = state) {
+                is ApiResult.Loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                is ApiResult.Error -> Text("Error: ${s.message}", modifier = Modifier.align(Alignment.Center))
+                is ApiResult.Success -> {
+                    if (s.data.isEmpty()) {
+                        Text("No estás inscrito en ninguna clase", modifier = Modifier.align(Alignment.Center))
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            items(s.data) { item ->
+                                MyClassCard(
+                                    item = item,
+                                    onClick = { onNavigateToDetail(item.id) },
+                                    onRateClick = {
+                                        selectedClassId = item.id
+                                        showRatingDialog = true
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun MyClassCard(
+    item: TutorClass,
+    onClick: () -> Unit,
+    onRateClick: () -> Unit
+) {
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        modifier = Modifier.fillMaxWidth(),
+        onClick = onClick
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = item.subject,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(text = "Tutor: ${item.creatorName}", style = MaterialTheme.typography.bodyMedium)
+                }
+                
+                // Botón de calificar
+                Button(
+                    onClick = onRateClick,
+                    modifier = Modifier.padding(start = 8.dp),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("Calificar", fontSize = 12.sp)
+                }
+            }
+            
+            val time = item.scheduledTime ?: item.timeLimit
+            if (time != null) {
+                Text(
+                    text = "Fecha: ${DateUtils.formatDate(time)}",
+                    style = MaterialTheme.typography.labelSmall
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.Info, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.secondary)
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("Toca para ver detalles y chats", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+            }
+        }
+    }
+}
+
+@Composable
+fun RatingDialog(
+    classSessionId: Long,
+    onDismiss: () -> Unit,
+    onRatingSubmitted: () -> Unit,
+    viewModel: RatingViewModel = viewModel(factory = RatingViewModelFactory(ServiceLocator.ratingRepository))
+) {
+    var score by remember { mutableStateOf(5) }
+    var comment by remember { mutableStateOf("") }
+    val actionState by viewModel.actionState.collectAsState()
+
+    LaunchedEffect(actionState) {
+        if (actionState is ApiResult.Success) {
+            onRatingSubmitted()
+            onDismiss()
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Calificar tutor") },
+        text = {
+            Column {
+                Text("Puntuación: $score / 5")
+                Slider(
+                    value = score.toFloat(),
+                    onValueChange = { score = it.roundToInt() },
+                    valueRange = 1f..5f,
+                    steps = 3
+                )
+                OutlinedTextField(
+                    value = comment,
+                    onValueChange = { comment = it },
+                    label = { Text("Comentario (opcional)") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    viewModel.createRating(RatingRequest(classSessionId, score, comment))
+                },
+                enabled = actionState !is ApiResult.Loading
+            ) {
+                if (actionState is ApiResult.Loading) {
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White)
+                } else {
+                    Text("Enviar")
+                }
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        }
+    )
+}
+</file>
+
+<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/screen/MyPostsScreen.kt">
+package com.example.tutoruam_proyecto.ui.screen
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.tutoruam_proyecto.ui.model.UserRole
+import com.example.tutoruam_proyecto.ui.service.ApiResult
+import com.example.tutoruam_proyecto.ui.service.ServiceLocator
+import com.example.tutoruam_proyecto.ui.service.TokenManager
+import com.example.tutoruam_proyecto.ui.viewmodel.TutoriasViewModel
+import com.example.tutoruam_proyecto.ui.viewmodel.TutoriasViewModelFactory
+
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.ui.graphics.vector.ImageVector
+import com.example.tutoruam_proyecto.ui.model.TutorClass
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MyPostsScreen(
+    role: UserRole,
+    onBack: () -> Unit,
+    onNavigateToClassDetail: (Long) -> Unit = {}
+) {
+    val viewModel: TutoriasViewModel = viewModel(
+        factory = TutoriasViewModelFactory(
+            ServiceLocator.tutoriasRepository,
+            ServiceLocator.chatRepository,
+            ServiceLocator.authRepository,
+            role
+        )
+    )
+    val itemsState by viewModel.itemsState.collectAsState()
+    val actionState by viewModel.actionState.collectAsState()
+    
+    var editingItem by remember { mutableStateOf<TutorClass?>(null) }
+    var itemToDelete by remember { mutableStateOf<TutorClass?>(null) }
+
+    LaunchedEffect(Unit) {
+        viewModel.loadMyPosts()
+    }
+
+    LaunchedEffect(actionState) {
+        if (actionState is ApiResult.Success) {
+            viewModel.clearActionState()
+        }
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Mis Publicaciones", fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+            )
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xFFF8F9FB))
+                .padding(innerPadding)
+                .padding(horizontal = 20.dp)
+        ) {
+            when (val state = itemsState) {
+                is ApiResult.Loading -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                }
+                is ApiResult.Success -> {
+                    val myItems = state.data
+                    
+                    if (myItems.isEmpty()) {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Text("No tienes publicaciones aún")
+                        }
+                    } else {
+                        LazyColumn(
+                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(vertical = 16.dp)
+                        ) {
+                            items(myItems) { item ->
+                                MyPostCard(
+                                    item = item,
+                                    role = role,
+                                    onEdit = { editingItem = item },
+                                    onDelete = { itemToDelete = item },
+                                    onClick = {
+                                        if (item.type == "CLASS") {
+                                            onNavigateToClassDetail(item.id)
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+                is ApiResult.Error -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(text = state.message ?: "Error al cargar datos")
+                    }
+                }
+            }
+        }
+    }
+
+    editingItem?.let { item ->
+        val initialTime = item.scheduledTime ?: item.timeLimit
+        val formattedTime = if (initialTime != null) {
+            com.example.tutoruam_proyecto.ui.utils.DateUtils.formatTime(initialTime)
+        } else {
+            ""
+        }
+
+        PostFormDialog(
+            role = role, // Usamos el rol actual para editar
+            initialSubject = item.subject,
+            initialDescription = item.description,
+            initialTime = formattedTime,
+            initialMaxStudents = item.maxStudents?.toString() ?: "1",
+            onDismiss = { editingItem = null },
+            onPost = { subject, time, desc, max ->
+                viewModel.updatePost(item, subject, time, desc, max)
+                editingItem = null
+            }
+        )
+    }
+
+    itemToDelete?.let { item ->
+        AlertDialog(
+            onDismissRequest = { itemToDelete = null },
+            title = { Text("Eliminar publicación") },
+            text = { Text("¿Estás seguro de que deseas eliminar esta publicación?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.deletePost(item)
+                        itemToDelete = null
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = Color.Red)
+                ) {
+                    Text("Eliminar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { itemToDelete = null }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+}
+
+@Composable
+fun MyPostCard(
+    item: TutorClass,
+    role: UserRole,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+    onClick: () -> Unit = {}
+) {
+    val isOwner = item.creatorId == TokenManager.getUserId()
+    
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        modifier = Modifier.fillMaxWidth(),
+        onClick = onClick
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = item.subject,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                if (isOwner) {
+                    Row {
+                        IconButton(onClick = onEdit) {
+                            Icon(Icons.Default.Edit, contentDescription = "Editar", tint = MaterialTheme.colorScheme.primary)
+                        }
+                        IconButton(onClick = onDelete) {
+                            Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = Color.Red)
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(text = item.description, style = MaterialTheme.typography.bodyMedium)
+            
+            val time = item.scheduledTime ?: item.timeLimit
+            if (time != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Hora: ${com.example.tutoruam_proyecto.ui.utils.DateUtils.formatDate(time)}",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+</file>
+
+<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/screen/MyTutoriasScreen.kt">
+package com.example.tutoruam_proyecto.ui.screen
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.tutoruam_proyecto.ui.model.TutorClass
+import com.example.tutoruam_proyecto.ui.model.UserRole
+import com.example.tutoruam_proyecto.ui.service.ApiResult
+import com.example.tutoruam_proyecto.ui.service.ServiceLocator
+import com.example.tutoruam_proyecto.ui.viewmodel.TutoriasViewModel
+import com.example.tutoruam_proyecto.ui.viewmodel.TutoriasViewModelFactory
+import androidx.compose.foundation.shape.RoundedCornerShape
+import com.example.tutoruam_proyecto.ui.utils.DateUtils
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MyTutoriasScreen(
+    onBack: () -> Unit,
+    onNavigateToChat: (Long, String) -> Unit
+) {
+    val viewModel: TutoriasViewModel = viewModel(
+        factory = TutoriasViewModelFactory(
+            ServiceLocator.tutoriasRepository,
+            ServiceLocator.chatRepository,
+            ServiceLocator.authRepository,
+            UserRole.TUTOR
+        )
+    )
+    val state by viewModel.myTutoriasState.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.loadMyTutorias()
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Mis Tutorías", fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+            )
+        }
+    ) { innerPadding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xFFF8F9FB))
+                .padding(innerPadding)
+        ) {
+            when (val s = state) {
+                is ApiResult.Loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                is ApiResult.Error -> Text("Error: ${s.message}", modifier = Modifier.align(Alignment.Center))
+                is ApiResult.Success -> {
+                    if (s.data.isEmpty()) {
+                        Text("No tienes tutorías asignadas", modifier = Modifier.align(Alignment.Center))
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            items(s.data) { item ->
+                                MyTutoriaCard(
+                                    item = item,
+                                    onChatClick = {
+                                        viewModel.getChatWithCreator(item.id, item.creatorId) { chat ->
+                                            onNavigateToChat(chat.id, chat.studentName ?: "Estudiante")
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun MyTutoriaCard(
+    item: TutorClass,
+    onChatClick: () -> Unit
+) {
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = item.subject,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(text = "Estudiante: ${item.creatorName}", style = MaterialTheme.typography.bodyMedium)
+            Text(text = item.description, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+            
+            val time = item.scheduledTime ?: item.timeLimit
+            if (time != null) {
+                Text(
+                    text = "Fecha: ${DateUtils.formatDate(time)}",
+                    style = MaterialTheme.typography.labelSmall
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            Button(
+                onClick = onChatClick,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Ir al chat")
+            }
+        }
+    }
+}
+</file>
+
+<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/viewmodel/RatingViewModel.kt">
 package com.example.tutoruam_proyecto.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.tutoruam_proyecto.ui.repository.AuthRepository
+import com.example.tutoruam_proyecto.ui.model.Rating
+import com.example.tutoruam_proyecto.ui.model.RatingRequest
+import com.example.tutoruam_proyecto.ui.repository.RatingRepository
 import com.example.tutoruam_proyecto.ui.service.ApiResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class PerfilViewModel(
-    private val repository: AuthRepository
+class RatingViewModel(
+    private val repository: RatingRepository
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow<ApiResult<Unit>?>(null)
-    val uiState: StateFlow<ApiResult<Unit>?> = _uiState.asStateFlow()
+    private val _ratingsState = MutableStateFlow<ApiResult<List<Rating>>?>(null)
+    val ratingsState: StateFlow<ApiResult<List<Rating>>?> = _ratingsState.asStateFlow()
 
-    fun changeRole(newRole: String) {
+    private val _averageState = MutableStateFlow<ApiResult<Double>?>(null)
+    val averageState: StateFlow<ApiResult<Double>?> = _averageState.asStateFlow()
+
+    private val _actionState = MutableStateFlow<ApiResult<Rating>?>(null)
+    val actionState: StateFlow<ApiResult<Rating>?> = _actionState.asStateFlow()
+
+    fun loadRatings(tutorId: Long) {
         viewModelScope.launch {
-            _uiState.value = ApiResult.Loading
-            val result = repository.changeRole(newRole)
-            _uiState.value = result
+            _ratingsState.value = ApiResult.Loading
+            _ratingsState.value = repository.getRatingsByTutor(tutorId)
         }
     }
 
-    fun clearState() {
-        _uiState.value = null
+    fun loadAverage(tutorId: Long) {
+        viewModelScope.launch {
+            _averageState.value = ApiResult.Loading
+            _averageState.value = repository.getAverageRating(tutorId)
+        }
+    }
+
+    fun createRating(request: RatingRequest) {
+        viewModelScope.launch {
+            _actionState.value = ApiResult.Loading
+            _actionState.value = repository.createRating(request)
+        }
+    }
+
+    fun clearActionState() {
+        _actionState.value = null
     }
 }
 
-class PerfilViewModelFactory(private val repository: AuthRepository) : ViewModelProvider.Factory {
+class RatingViewModelFactory(
+    private val repository: RatingRepository
+) : ViewModelProvider.Factory {
+    @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(PerfilViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return PerfilViewModel(repository) as T
+        if (modelClass.isAssignableFrom(RatingViewModel::class.java)) {
+            return RatingViewModel(repository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }
@@ -328,13 +1454,27 @@ package com.example.tutoruam_proyecto.ui.model
 
 data class Chat(
     val id: Long,
-    val tutorId: Long,
-    val tutorName: String,
-    val studentId: Long,
-    val studentName: String,
+    val isGroup: Boolean = false,
+    val groupName: String? = null,
+    val classSessionId: Long? = null,
+    // Para 1 a 1
+    val tutorId: Long? = null,
+    val tutorName: String? = null,
+    val studentId: Long? = null,
+    val studentName: String? = null,
+    // Para grupos
+    val participants: List<UserProfile>? = null,
     val lastMessage: String?,
     val lastMessageAt: String?,
     val unreadCount: Int
+)
+
+data class UserProfile(
+    val id: Long,
+    val name: String,
+    val email: String,
+    val role: String,
+    val rating: Double? = null
 )
 </file>
 
@@ -364,52 +1504,6 @@ data class SendMessageRequest(
 )
 </file>
 
-<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/model/TutorClass.kt">
-package com.example.tutoruam_proyecto.ui.model
-
-data class TutorClass(
-    val id: Long,
-    val creatorId: Long,          // tutorId para clases, studentId para requests
-    val creatorName: String,      // tutorName o studentName
-    val subject: String,
-    val scheduledTime: String? = null, // para clases
-    val description: String,
-    val maxStudents: Int? = null,     // para clases
-    val currentStudents: Int? = null, // para clases
-    val status: String? = null,       // para clases
-    val timeLimit: String? = null,    // para requests
-    val type: String  // "CLASS" o "REQUEST"
-)
-
-data class ClassSessionResponse(
-    val id: Long,
-    val tutorId: Long,
-    val tutorName: String,
-    val subject: String,
-    val scheduledTime: String,
-    val description: String,
-    val maxStudents: Int,
-    val currentStudents: Int,
-    val status: String
-)
-
-data class HelpRequestResponse(
-    val id: Long,
-    val studentId: Long,
-    val studentName: String,
-    val subject: String,
-    val description: String,
-    val timeLimit: String? = null
-)
-
-data class CreateClassRequest(
-    val subject: String,
-    val scheduledTime: String,  // NOTA: se llama scheduledTime, no "time"
-    val description: String,
-    val maxStudents: Int
-)
-</file>
-
 <file path="app/src/main/java/com/example/tutoruam_proyecto/ui/model/TutorResponse.kt">
 package com.example.tutoruam_proyecto.ui.model
 
@@ -430,40 +1524,29 @@ enum class UserRole {
 }
 </file>
 
-<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/repository/AuthRepository.kt">
-package com.example.tutoruam_proyecto.ui.repository
-
-import com.example.tutoruam_proyecto.ui.model.LoginResponse
-import com.example.tutoruam_proyecto.ui.model.RegisterRequest
-import com.example.tutoruam_proyecto.ui.service.ApiResult
-
-interface AuthRepository {
-    suspend fun login(email: String, password: String): ApiResult<LoginResponse>
-    suspend fun register(request: RegisterRequest): ApiResult<LoginResponse>
-    suspend fun changeRole(newRole: String): ApiResult<Unit>
-}
-</file>
-
 <file path="app/src/main/java/com/example/tutoruam_proyecto/ui/repository/ChatRepository.kt">
 package com.example.tutoruam_proyecto.ui.repository
 
 import com.example.tutoruam_proyecto.ui.model.Chat
 import com.example.tutoruam_proyecto.ui.model.Message
+import com.example.tutoruam_proyecto.ui.model.UserProfile
 import com.example.tutoruam_proyecto.ui.service.ApiResult
 
 interface ChatRepository {
     suspend fun getChats(): ApiResult<List<Chat>>
     suspend fun getMessages(chatId: Long, since: String? = null): ApiResult<List<Message>>
     suspend fun sendMessage(chatId: Long, content: String): ApiResult<Message>
+    
+    suspend fun getChatParticipants(chatId: Long): ApiResult<List<UserProfile>>
+    suspend fun addParticipant(chatId: Long, userId: Long): ApiResult<Unit>
+    suspend fun removeParticipant(chatId: Long, userId: Long): ApiResult<Unit>
 }
 </file>
 
 <file path="app/src/main/java/com/example/tutoruam_proyecto/ui/repository/ChatRepositoryImpl.kt">
 package com.example.tutoruam_proyecto.ui.repository
 
-import com.example.tutoruam_proyecto.ui.model.SendMessageRequest
-import com.example.tutoruam_proyecto.ui.model.Chat
-import com.example.tutoruam_proyecto.ui.model.Message
+import com.example.tutoruam_proyecto.ui.model.*
 import com.example.tutoruam_proyecto.ui.service.ApiResult
 import com.example.tutoruam_proyecto.ui.service.ApiService
 import java.io.IOException
@@ -482,6 +1565,18 @@ class ChatRepositoryImpl(
 
     override suspend fun sendMessage(chatId: Long, content: String): ApiResult<Message> {
         return executeRequest { apiService.sendMessage(chatId, SendMessageRequest(content)) }
+    }
+
+    override suspend fun getChatParticipants(chatId: Long): ApiResult<List<UserProfile>> {
+        return executeRequest { apiService.getChatParticipants(chatId) }
+    }
+
+    override suspend fun addParticipant(chatId: Long, userId: Long): ApiResult<Unit> {
+        return executeRequest { apiService.addParticipant(chatId, userId) }
+    }
+
+    override suspend fun removeParticipant(chatId: Long, userId: Long): ApiResult<Unit> {
+        return executeRequest { apiService.removeParticipant(chatId, userId) }
     }
 
     private suspend fun <T> executeRequest(
@@ -511,327 +1606,35 @@ class ChatRepositoryImpl(
 <file path="app/src/main/java/com/example/tutoruam_proyecto/ui/repository/TutoriasRepository.kt">
 package com.example.tutoruam_proyecto.ui.repository
 
+import com.example.tutoruam_proyecto.ui.model.Chat
 import com.example.tutoruam_proyecto.ui.model.CreateClassRequest
+import com.example.tutoruam_proyecto.ui.model.CreateHelpRequest
 import com.example.tutoruam_proyecto.ui.model.TutorClass
+import com.example.tutoruam_proyecto.ui.model.UserProfile
 import com.example.tutoruam_proyecto.ui.service.ApiResult
 
 interface TutoriasRepository {
-    suspend fun getClasses(subject: String? = null): ApiResult<List<TutorClass>>
+    suspend fun getClasses(subject: String? = null, tutorId: Long? = null, studentId: Long? = null): ApiResult<List<TutorClass>>
     suspend fun createClass(request: CreateClassRequest): ApiResult<TutorClass>
     suspend fun joinClass(classId: Long): ApiResult<Unit>
-    suspend fun getRequests(subject: String? = null): ApiResult<List<TutorClass>>
+    suspend fun getRequests(subject: String? = null, studentId: Long? = null, tutorAssignedId: Long? = null): ApiResult<List<TutorClass>>
     suspend fun createRequest(request: CreateClassRequest): ApiResult<TutorClass>
-}
-</file>
+    
+    suspend fun getClassStudents(classId: Long): ApiResult<List<UserProfile>>
+    suspend fun removeStudent(classId: Long, studentId: Long): ApiResult<Unit>
+    suspend fun createGroupChat(classId: Long): ApiResult<Chat>
 
-<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/repository/TutoriasRepositoryImpl.kt">
-package com.example.tutoruam_proyecto.ui.repository
+    // Nuevos
+    suspend fun updateClass(classId: Long, request: CreateClassRequest): ApiResult<TutorClass>
+    suspend fun deleteClass(classId: Long): ApiResult<Unit>
+    suspend fun updateRequest(requestId: Long, request: CreateHelpRequest): ApiResult<TutorClass>
+    suspend fun deleteRequest(requestId: Long): ApiResult<Unit>
+    suspend fun assignRequest(requestId: Long): ApiResult<Unit>
+    suspend fun updateClassStatus(classId: Long, status: String): ApiResult<Unit>
+    suspend fun getClassById(classId: Long): ApiResult<TutorClass>
 
-import android.util.Log
-import com.example.tutoruam_proyecto.ui.model.ClassSessionResponse
-import com.example.tutoruam_proyecto.ui.model.CreateClassRequest
-import com.example.tutoruam_proyecto.ui.model.HelpRequestResponse
-import com.example.tutoruam_proyecto.ui.model.TutorClass
-import com.example.tutoruam_proyecto.ui.service.ApiResult
-import com.example.tutoruam_proyecto.ui.service.ApiService
-import java.io.IOException
-import retrofit2.Response
-
-class TutoriasRepositoryImpl(
-    private val apiService: ApiService
-) : TutoriasRepository {
-
-    override suspend fun getClasses(subject: String?): ApiResult<List<TutorClass>> {
-        return try {
-            val response = apiService.getClasses(subject)
-            if (response.isSuccessful) {
-                val classes = response.body()?.map { it.toDomain() } ?: emptyList()
-                ApiResult.Success(classes)
-            } else {
-                ApiResult.Error(code = response.code(), message = response.errorBody()?.string() ?: "Error")
-            }
-        } catch (e: Exception) {
-            ApiResult.Error(message = e.message ?: "Error", exception = e)
-        }
-    }
-
-    override suspend fun createClass(request: CreateClassRequest): ApiResult<TutorClass> {
-        Log.d("TutoriasRepo", "Creando clase: $request")
-        return try {
-            val response = apiService.createClass(request)
-            Log.d("TutoriasRepo", "Código: ${response.code()}")
-            if (response.isSuccessful) {
-                val body = response.body()
-                if (body != null) ApiResult.Success(body.toDomain())
-                else ApiResult.Error(message = "Respuesta vacía")
-            } else {
-                ApiResult.Error(code = response.code(), message = response.errorBody()?.string() ?: "Error")
-            }
-        } catch (e: Exception) {
-            Log.e("TutoriasRepo", "Error: ${e.message}", e)
-            ApiResult.Error(message = e.message ?: "Error", exception = e)
-        }
-    }
-
-    override suspend fun joinClass(classId: Long): ApiResult<Unit> {
-        Log.d("TutoriasRepo", "Uniéndose a clase: $classId")
-        return executeRequest { apiService.joinClass(classId) }
-    }
-
-    override suspend fun getRequests(subject: String?): ApiResult<List<TutorClass>> {
-        return try {
-            val response = apiService.getRequests(subject)
-            if (response.isSuccessful) {
-                val requests = response.body()?.map { it.toDomain() } ?: emptyList()
-                ApiResult.Success(requests)
-            } else {
-                ApiResult.Error(code = response.code(), message = response.errorBody()?.string() ?: "Error")
-            }
-        } catch (e: Exception) {
-            ApiResult.Error(message = e.message ?: "Error", exception = e)
-        }
-    }
-
-    override suspend fun createRequest(request: CreateClassRequest): ApiResult<TutorClass> {
-        Log.d("TutoriasRepo", "Creando solicitud: $request")
-        return try {
-            val response = apiService.createRequest(request)
-            Log.d("TutoriasRepo", "Código: ${response.code()}")
-            if (response.isSuccessful) {
-                val body = response.body()
-                if (body != null) ApiResult.Success(body.toDomain())
-                else ApiResult.Error(message = "Respuesta vacía")
-            } else {
-                ApiResult.Error(code = response.code(), message = response.errorBody()?.string() ?: "Error")
-            }
-        } catch (e: Exception) {
-            Log.e("TutoriasRepo", "Error: ${e.message}", e)
-            ApiResult.Error(message = e.message ?: "Error", exception = e)
-        }
-    }
-
-    private fun com.example.tutoruam_proyecto.ui.model.ClassSessionResponse.toDomain() = TutorClass(
-        id = id,
-        creatorId = tutorId,
-        creatorName = tutorName,
-        subject = subject,
-        scheduledTime = scheduledTime,
-        description = description,
-        maxStudents = maxStudents,
-        currentStudents = currentStudents,
-        status = status,
-        type = "CLASS"
-    )
-
-    private fun com.example.tutoruam_proyecto.ui.model.HelpRequestResponse.toDomain() = TutorClass(
-        id = id,
-        creatorId = studentId,
-        creatorName = studentName,
-        subject = subject,
-        description = description,
-        timeLimit = timeLimit,
-        type = "REQUEST"
-    )
-
-    private suspend fun <T> executeRequest(
-        request: suspend () -> Response<T>
-    ): ApiResult<T> {
-        return try {
-            val response = request()
-            if (response.isSuccessful) {
-                val body = response.body()
-                if (body != null) {
-                    ApiResult.Success(body)
-                } else {
-                    @Suppress("UNCHECKED_CAST")
-                    ApiResult.Success(Unit as T)
-                }
-            } else {
-                ApiResult.Error(
-                    code = response.code(),
-                    message = response.errorBody()?.string() ?: "Error"
-                )
-            }
-        } catch (e: IOException) {
-            ApiResult.Error(message = "Sin conexión", exception = e)
-        } catch (e: Exception) {
-            ApiResult.Error(message = e.message ?: "Error", exception = e)
-        }
-    }
-}
-</file>
-
-<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/screen/ChatDetailScreen.kt">
-package com.example.tutoruam_proyecto.ui.screen
-
-import java.time.OffsetDateTime
-import java.time.format.DateTimeFormatter
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.automirrored.rounded.Send
-import androidx.compose.material.icons.Icons
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import java.text.SimpleDateFormat
-import java.util.Locale
-import java.util.TimeZone
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.tutoruam_proyecto.ui.model.Message
-import com.example.tutoruam_proyecto.ui.service.ApiResult
-import com.example.tutoruam_proyecto.ui.service.ServiceLocator
-import com.example.tutoruam_proyecto.ui.service.TokenManager
-import com.example.tutoruam_proyecto.ui.viewmodel.ChatViewModel
-import com.example.tutoruam_proyecto.ui.viewmodel.ChatViewModelFactory
-import kotlinx.coroutines.delay
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun ChatDetailScreen(
-    chatId: Long,
-    otherUserName: String,
-    onBackClick: () -> Unit,
-    viewModel: ChatViewModel = viewModel(factory = ChatViewModelFactory(ServiceLocator.chatRepository))
-) {
-    var messageText by remember { mutableStateOf("") }
-    val messagesState by viewModel.messagesState.collectAsState()
-    val sendState by viewModel.sendMessageState.collectAsState()
-    val listState = rememberLazyListState()
-
-    DisposableEffect(chatId) {
-        val job = viewModel.startPolling(chatId)
-        onDispose { job.cancel() }
-    }
-
-    LaunchedEffect(sendState) {
-        if (sendState is ApiResult.Success) {
-            viewModel.clearSendState()
-            viewModel.loadMessages(chatId)
-        }
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-    ) {
-        TopAppBar(
-            title = { Text(otherUserName, fontWeight = FontWeight.Bold) },
-            navigationIcon = {
-                IconButton(onClick = onBackClick) {
-                    Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver")
-                }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
-        )
-
-        when (val state = messagesState) {
-            is ApiResult.Loading -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
-            is ApiResult.Success -> {
-                val messages = state.data
-                LazyColumn(
-                    state = listState,
-                    modifier = Modifier.weight(1f),
-                    reverseLayout = true,
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(messages.reversed()) { message ->
-                        MessageBubble(message = message, isMine = message.senderId == TokenManager.getUserId())
-                    }
-                }
-                LaunchedEffect(messages) {
-                    if (messages.isNotEmpty()) {
-                        listState.animateScrollToItem(0)
-                    }
-                }
-            }
-            is ApiResult.Error -> {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Error: ${state.message}", color = MaterialTheme.colorScheme.error)
-                }
-            }
-            null -> Unit
-        }
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            OutlinedTextField(
-                value = messageText,
-                onValueChange = { messageText = it },
-                placeholder = { Text("Escribe un mensaje...") },
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(24.dp)
-            )
-            IconButton(
-                onClick = {
-                    if (messageText.isNotBlank()) {
-                        viewModel.sendMessage(chatId, messageText)
-                        messageText = ""
-                    }
-                },
-                enabled = sendState !is ApiResult.Loading
-            ) {
-                Icon(Icons.AutoMirrored.Rounded.Send, contentDescription = "Enviar", tint = MaterialTheme.colorScheme.primary)
-            }
-        }
-    }
-}
-
-@Composable
-fun MessageBubble(message: Message, isMine: Boolean) {
-    val formattedTime = remember(message.sentAt) {
-        try {
-            val date = OffsetDateTime.parse(message.sentAt)
-            date.format(DateTimeFormatter.ofPattern("HH:mm"))
-        } catch (e: Exception) {
-            message.sentAt
-        }
-    }
-
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = if (isMine) Arrangement.End else Arrangement.Start
-    ) {
-        Surface(
-            shape = RoundedCornerShape(
-                topStart = 16.dp,
-                topEnd = 16.dp,
-                bottomStart = if (isMine) 16.dp else 4.dp,
-                bottomEnd = if (isMine) 4.dp else 16.dp
-            ),
-            color = if (isMine) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
-            tonalElevation = 0.dp
-        ) {
-            Column(modifier = Modifier.padding(12.dp)) {
-                Text(
-                    text = message.content,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = if (isMine) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = formattedTime,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                    modifier = Modifier.align(Alignment.End)
-                )
-            }
-        }
-    }
+    suspend fun getMyTutoriasAsTutor(): ApiResult<List<TutorClass>>
+    suspend fun getMyClassesAsStudent(): ApiResult<List<TutorClass>>
 }
 </file>
 
@@ -859,78 +1662,51 @@ inline fun <T> ApiResult<T>.onError(action: (ApiResult.Error) -> Unit): ApiResul
 }
 </file>
 
-<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/viewmodel/ChatViewModel.kt">
-package com.example.tutoruam_proyecto.ui.viewmodel
+<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/utils/DateUtils.kt">
+package com.example.tutoruam_proyecto.ui.utils
 
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import com.example.tutoruam_proyecto.ui.model.Chat
-import com.example.tutoruam_proyecto.ui.model.Message
-import com.example.tutoruam_proyecto.ui.repository.ChatRepository
-import com.example.tutoruam_proyecto.ui.service.ApiResult
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.*
 
-class ChatViewModel(
-    private val chatRepository: ChatRepository
-) : ViewModel() {
-
-    private val _chatsState = MutableStateFlow<ApiResult<List<Chat>>?>(null)
-    val chatsState: StateFlow<ApiResult<List<Chat>>?> = _chatsState.asStateFlow()
-
-    private val _messagesState = MutableStateFlow<ApiResult<List<Message>>?>(null)
-    val messagesState: StateFlow<ApiResult<List<Message>>?> = _messagesState.asStateFlow()
-
-    private val _sendMessageState = MutableStateFlow<ApiResult<Message>?>(null)
-    val sendMessageState: StateFlow<ApiResult<Message>?> = _sendMessageState.asStateFlow()
-
-    fun loadChats() {
-        viewModelScope.launch {
-            _chatsState.value = ApiResult.Loading
-            _chatsState.value = chatRepository.getChats()
+object DateUtils {
+    fun formatDate(isoDate: String?): String {
+        if (isoDate == null) return ""
+        val date = parseIso(isoDate)
+        return if (date != null) {
+            SimpleDateFormat("dd/MM HH:mm", Locale.getDefault()).format(date)
+        } else {
+            isoDate
         }
     }
 
-    fun loadMessages(chatId: Long, since: String? = null) {
-        viewModelScope.launch {
-            _messagesState.value = ApiResult.Loading
-            _messagesState.value = chatRepository.getMessages(chatId, since)
+    fun formatTime(isoDate: String?): String {
+        if (isoDate == null) return ""
+        val date = parseIso(isoDate)
+        return if (date != null) {
+            SimpleDateFormat("HH:mm", Locale.getDefault()).format(date)
+        } else {
+            isoDate
         }
     }
 
-    fun sendMessage(chatId: Long, content: String) {
-        viewModelScope.launch {
-            _sendMessageState.value = ApiResult.Loading
-            val result = chatRepository.sendMessage(chatId, content)
-            _sendMessageState.value = result
-            if (result is ApiResult.Success) {
-                loadMessages(chatId)
+    private fun parseIso(isoDate: String): Date? {
+        val formats = arrayOf(
+            "yyyy-MM-dd'T'HH:mm:ss.SSSSSS",
+            "yyyy-MM-dd'T'HH:mm:ss.SSS",
+            "yyyy-MM-dd'T'HH:mm:ss",
+            "yyyy-MM-dd HH:mm:ss",
+            "yyyy-MM-dd"
+        )
+        for (format in formats) {
+            try {
+                val sdf = SimpleDateFormat(format, Locale.getDefault())
+                // Si contiene 'T', aseguramos que el formato lo use
+                return sdf.parse(isoDate)
+            } catch (e: Exception) {
+                // Continue
             }
         }
-    }
-
-    fun clearMessagesState() {
-        _messagesState.value = null
-    }
-
-    fun clearSendState() {
-        _sendMessageState.value = null
-    }
-
-    fun startPolling(chatId: Long): Job {
-        return viewModelScope.launch {
-            while (true) {
-                val result = chatRepository.getMessages(chatId)
-                if (result is ApiResult.Success) {
-                    _messagesState.value = result
-                }
-                delay(3000)
-            }
-        }
+        return null
     }
 }
 </file>
@@ -976,111 +1752,56 @@ class LoginViewModelFactory(
 }
 </file>
 
-<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/viewmodel/TutoriasViewModel.kt">
+<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/viewmodel/PerfilViewModel.kt">
 package com.example.tutoruam_proyecto.ui.viewmodel
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.tutoruam_proyecto.ui.model.CreateClassRequest
-import com.example.tutoruam_proyecto.ui.model.TutorClass
-import com.example.tutoruam_proyecto.ui.model.UserRole
-import com.example.tutoruam_proyecto.ui.repository.ChatRepository
-import com.example.tutoruam_proyecto.ui.repository.TutoriasRepository
+import com.example.tutoruam_proyecto.ui.model.Chat
+import com.example.tutoruam_proyecto.ui.repository.AuthRepository
 import com.example.tutoruam_proyecto.ui.service.ApiResult
-import com.example.tutoruam_proyecto.ui.service.TokenManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class TutoriasViewModel(
-    private val repository: TutoriasRepository,
-    private val chatRepository: ChatRepository,
-    private val role: UserRole
+class PerfilViewModel(
+    private val repository: AuthRepository
 ) : ViewModel() {
 
-    private val _itemsState = MutableStateFlow<ApiResult<List<TutorClass>>>(ApiResult.Loading)
-    val itemsState: StateFlow<ApiResult<List<TutorClass>>> = _itemsState.asStateFlow()
+    private val _uiState = MutableStateFlow<ApiResult<Any>?>(null)
+    val uiState: StateFlow<ApiResult<Any>?> = _uiState.asStateFlow()
 
-    private val _actionState = MutableStateFlow<ApiResult<Any>?>(null)
-    val actionState: StateFlow<ApiResult<Any>?> = _actionState.asStateFlow()
-
-    init {
-        loadData()
-    }
-
-    fun loadData(subject: String? = null) {
+    fun changeRole(newRole: String) {
         viewModelScope.launch {
-            _itemsState.value = ApiResult.Loading
-            _itemsState.value = if (role == UserRole.TUTOR) {
-                repository.getRequests(subject)
-            } else {
-                repository.getClasses(subject)
-            }
+            _uiState.value = ApiResult.Loading
+            val result = repository.changeRole(newRole)
+            _uiState.value = result as ApiResult<Any>
         }
     }
 
-    fun createPost(subject: String, time: String, description: String, maxStudents: Int) {
+    fun startChatWithUser(recipientId: Long, onChatCreated: (Chat) -> Unit) {
         viewModelScope.launch {
-            _actionState.value = ApiResult.Loading
-            val request = CreateClassRequest(
-                subject = subject,
-                scheduledTime = time,
-                description = description,
-                maxStudents = maxStudents
-            )
-            val result = if (role == UserRole.TUTOR) {
-                repository.createClass(request)
-            } else {
-                repository.createRequest(request)
-            }
-            _actionState.value = result as ApiResult<Any>
+            _uiState.value = ApiResult.Loading
+            val result = repository.createChat(recipientId)
             if (result is ApiResult.Success) {
-                loadData()
+                onChatCreated(result.data)
             }
+            _uiState.value = result as ApiResult<Any>
         }
     }
 
-    fun joinClass(classId: Long, creatorName: String, creatorId: Long) {
-        viewModelScope.launch {
-            _actionState.value = ApiResult.Loading
-            val result = repository.joinClass(classId)
-            if (result is ApiResult.Success) {
-                // Ahora obtener el chat entre el usuario actual y el creador (tutor o estudiante)
-                val chatsResult = chatRepository.getChats()
-                if (chatsResult is ApiResult.Success) {
-                    val lastChat = chatsResult.data.lastOrNull { it.tutorId == creatorId || it.studentId == creatorId }
-                    if (lastChat != null) {
-                        _actionState.value = ApiResult.Success(Pair(lastChat.id, creatorName))
-                    } else {
-                        _actionState.value = ApiResult.Success(Unit)
-                    }
-                } else {
-                    _actionState.value = ApiResult.Success(Unit)
-                }
-                loadData()
-            } else {
-                _actionState.value = result as ApiResult<Any>
-            }
-        }
-    }
-
-    fun clearActionState() {
-        _actionState.value = null
+    fun clearState() {
+        _uiState.value = null
     }
 }
 
-class TutoriasViewModelFactory(
-    private val repository: TutoriasRepository,
-    private val chatRepository: ChatRepository,
-    private val role: UserRole
-) : ViewModelProvider.Factory {
-    override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(TutoriasViewModel::class.java)) {
+class PerfilViewModelFactory(private val repository: AuthRepository) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(PerfilViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return TutoriasViewModel(repository, chatRepository, role) as T
+            return PerfilViewModel(repository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }
@@ -1821,39 +2542,6 @@ rootProject.name = "TutorUam-Proyecto"
 include(":app")
 </file>
 
-<file path="app/src/main/AndroidManifest.xml">
-<?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
-
-    <uses-permission android:name="android.permission.INTERNET" />
-
-    <application
-        android:allowBackup="true"
-        android:usesCleartextTraffic="true"
-        android:dataExtractionRules="@xml/data_extraction_rules"
-        android:fullBackupContent="@xml/backup_rules"
-        android:icon="@mipmap/ic_launcher"
-        android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher_round"
-        android:supportsRtl="true"
-        android:theme="@style/Theme.TutorUamProyecto">
-        <activity
-            android:name=".MainActivity"
-            android:exported="true"
-            android:label="@string/app_name"
-            android:theme="@style/Theme.TutorUamProyecto">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-    </application>
-
-</manifest>
-</file>
-
 <file path="app/src/main/java/com/example/tutoruam_proyecto/MainActivity.kt">
 package com.example.tutoruam_proyecto
 
@@ -1905,13 +2593,1065 @@ data class RegisterRequest(
 )
 </file>
 
+<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/model/TutorClass.kt">
+package com.example.tutoruam_proyecto.ui.model
+
+data class TutorClass(
+    val id: Long,
+    val creatorId: Long,          // tutorId para clases, studentId para requests
+    val creatorName: String,      // tutorName o studentName
+    val subject: String,
+    val scheduledTime: String? = null, // para clases
+    val description: String,
+    val maxStudents: Int? = null,     // para clases
+    val currentStudents: Int? = null, // para clases
+    val status: String? = null,       // para clases
+    val timeLimit: String? = null,    // para requests
+    val type: String  // "CLASS" o "REQUEST"
+)
+
+data class ClassSessionResponse(
+    val id: Long,
+    val tutorId: Long,
+    val tutorName: String,
+    val subject: String,
+    val scheduledTime: String,
+    val description: String,
+    val maxStudents: Int,
+    val currentStudents: Int,
+    val status: String
+)
+
+data class HelpRequestResponse(
+    val id: Long,
+    val studentId: Long,
+    val studentName: String,
+    val subject: String,
+    val description: String,
+    val timeLimit: String? = null
+)
+
+data class CreateClassRequest(
+    val subject: String,
+    val scheduledTime: String,  // NOTA: se llama scheduledTime, no "time"
+    val description: String,
+    val maxStudents: Int
+)
+
+data class CreateHelpRequest(
+    val subject: String,
+    val description: String,
+    val timeLimit: String? = null
+)
+</file>
+
+<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/repository/AuthRepository.kt">
+package com.example.tutoruam_proyecto.ui.repository
+
+import com.example.tutoruam_proyecto.ui.model.Chat
+import com.example.tutoruam_proyecto.ui.model.LoginResponse
+import com.example.tutoruam_proyecto.ui.model.RegisterRequest
+import com.example.tutoruam_proyecto.ui.service.ApiResult
+
+interface AuthRepository {
+    suspend fun login(email: String, password: String): ApiResult<LoginResponse>
+    suspend fun register(request: RegisterRequest): ApiResult<LoginResponse>
+    suspend fun changeRole(newRole: String): ApiResult<Unit>
+    suspend fun createChat(recipientId: Long): ApiResult<Chat>
+}
+</file>
+
+<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/repository/TutoriasRepositoryImpl.kt">
+package com.example.tutoruam_proyecto.ui.repository
+
+import android.util.Log
+import com.example.tutoruam_proyecto.ui.model.*
+import com.example.tutoruam_proyecto.ui.service.ApiResult
+import com.example.tutoruam_proyecto.ui.service.ApiService
+import java.io.IOException
+import retrofit2.Response
+
+class TutoriasRepositoryImpl(
+    private val apiService: ApiService
+) : TutoriasRepository {
+
+    override suspend fun getClasses(subject: String?, tutorId: Long?, studentId: Long?): ApiResult<List<TutorClass>> {
+        return try {
+            val response = apiService.getClasses(subject, tutorId, studentId)
+            if (response.isSuccessful) {
+                val classes = response.body()?.map { it.toDomain() } ?: emptyList()
+                ApiResult.Success(classes)
+            } else {
+                ApiResult.Error(code = response.code(), message = response.errorBody()?.string() ?: "Error")
+            }
+        } catch (e: Exception) {
+            ApiResult.Error(message = e.message ?: "Error", exception = e)
+        }
+    }
+
+    override suspend fun createClass(request: CreateClassRequest): ApiResult<TutorClass> {
+        Log.d("TutoriasRepo", "Creando clase: $request")
+        return try {
+            val response = apiService.createClass(request)
+            Log.d("TutoriasRepo", "Código: ${response.code()}")
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null) ApiResult.Success(body.toDomain())
+                else ApiResult.Error(message = "Respuesta vacía")
+            } else {
+                ApiResult.Error(code = response.code(), message = response.errorBody()?.string() ?: "Error")
+            }
+        } catch (e: Exception) {
+            Log.e("TutoriasRepo", "Error: ${e.message}", e)
+            ApiResult.Error(message = e.message ?: "Error", exception = e)
+        }
+    }
+
+    override suspend fun joinClass(classId: Long): ApiResult<Unit> {
+        Log.d("TutoriasRepo", "Uniéndose a clase: $classId")
+        return executeRequest { apiService.joinClass(classId) }
+    }
+
+    override suspend fun getRequests(subject: String?, studentId: Long?, tutorAssignedId: Long?): ApiResult<List<TutorClass>> {
+        return try {
+            val response = apiService.getRequests(subject, studentId, tutorAssignedId)
+            if (response.isSuccessful) {
+                val requests = response.body()?.map { it.toDomain() } ?: emptyList()
+                ApiResult.Success(requests)
+            } else {
+                ApiResult.Error(code = response.code(), message = response.errorBody()?.string() ?: "Error")
+            }
+        } catch (e: Exception) {
+            ApiResult.Error(message = e.message ?: "Error", exception = e)
+        }
+    }
+
+    override suspend fun createRequest(request: CreateClassRequest): ApiResult<TutorClass> {
+        Log.d("TutoriasRepo", "Creando solicitud: $request")
+        return try {
+            val response = apiService.createRequest(request)
+            Log.d("TutoriasRepo", "Código: ${response.code()}")
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null) ApiResult.Success(body.toDomain())
+                else ApiResult.Error(message = "Respuesta vacía")
+            } else {
+                ApiResult.Error(code = response.code(), message = response.errorBody()?.string() ?: "Error")
+            }
+        } catch (e: Exception) {
+            Log.e("TutoriasRepo", "Error: ${e.message}", e)
+            ApiResult.Error(message = e.message ?: "Error", exception = e)
+        }
+    }
+
+    override suspend fun getClassStudents(classId: Long): ApiResult<List<UserProfile>> {
+        return executeRequest { apiService.getClassStudents(classId) }
+    }
+
+    override suspend fun removeStudent(classId: Long, studentId: Long): ApiResult<Unit> {
+        return executeRequest { apiService.removeStudent(classId, studentId) }
+    }
+
+    override suspend fun createGroupChat(classId: Long): ApiResult<Chat> {
+        return executeRequest { apiService.createGroupChat(classId) }
+    }
+
+    override suspend fun updateClass(classId: Long, request: CreateClassRequest): ApiResult<TutorClass> {
+        return try {
+            val response = apiService.updateClass(classId, request)
+            if (response.isSuccessful) {
+                ApiResult.Success(response.body()!!.toDomain())
+            } else {
+                ApiResult.Error(code = response.code(), message = response.errorBody()?.string() ?: "Error")
+            }
+        } catch (e: Exception) {
+            ApiResult.Error(message = e.message ?: "Error", exception = e)
+        }
+    }
+
+    override suspend fun deleteClass(classId: Long): ApiResult<Unit> {
+        return executeRequest { apiService.deleteClass(classId) }
+    }
+
+    override suspend fun updateRequest(requestId: Long, request: CreateHelpRequest): ApiResult<TutorClass> {
+        return try {
+            val response = apiService.updateRequest(requestId, request)
+            if (response.isSuccessful) {
+                ApiResult.Success(response.body()!!.toDomain())
+            } else {
+                ApiResult.Error(code = response.code(), message = response.errorBody()?.string() ?: "Error")
+            }
+        } catch (e: Exception) {
+            ApiResult.Error(message = e.message ?: "Error", exception = e)
+        }
+    }
+
+    override suspend fun deleteRequest(requestId: Long): ApiResult<Unit> {
+        return executeRequest { apiService.deleteRequest(requestId) }
+    }
+
+    override suspend fun assignRequest(requestId: Long): ApiResult<Unit> {
+        return executeRequest { apiService.assignRequest(requestId) }
+    }
+
+    override suspend fun updateClassStatus(classId: Long, status: String): ApiResult<Unit> {
+        return executeRequest { apiService.updateClassStatus(classId, UpdateClassStatusRequest(status)) }
+    }
+
+    override suspend fun getClassById(classId: Long): ApiResult<TutorClass> {
+        return try {
+            val response = apiService.getClassById(classId)
+            if (response.isSuccessful) {
+                ApiResult.Success(response.body()!!.toDomain())
+            } else {
+                ApiResult.Error(code = response.code(), message = response.errorBody()?.string() ?: "Error")
+            }
+        } catch (e: Exception) {
+            ApiResult.Error(message = e.message ?: "Error", exception = e)
+        }
+    }
+
+    override suspend fun getMyTutoriasAsTutor(): ApiResult<List<TutorClass>> {
+        val userId = com.example.tutoruam_proyecto.ui.service.TokenManager.getUserId() ?: return ApiResult.Error(message = "Usuario no autenticado")
+        return try {
+            val response = apiService.getRequests(tutorAssignedId = userId)
+            if (response.isSuccessful) {
+                val list = response.body()?.map { it.toDomain() } ?: emptyList()
+                ApiResult.Success(list)
+            } else {
+                ApiResult.Error(code = response.code(), message = response.errorBody()?.string())
+            }
+        } catch (e: Exception) {
+            ApiResult.Error(message = e.message)
+        }
+    }
+
+    override suspend fun getMyClassesAsStudent(): ApiResult<List<TutorClass>> {
+        val userId = com.example.tutoruam_proyecto.ui.service.TokenManager.getUserId() ?: return ApiResult.Error(message = "Usuario no autenticado")
+        return try {
+            val response = apiService.getClasses(studentId = userId)
+            if (response.isSuccessful) {
+                val list = response.body()?.map { it.toDomain() } ?: emptyList()
+                ApiResult.Success(list)
+            } else {
+                ApiResult.Error(code = response.code(), message = response.errorBody()?.string())
+            }
+        } catch (e: Exception) {
+            ApiResult.Error(message = e.message)
+        }
+    }
+
+    private fun com.example.tutoruam_proyecto.ui.model.ClassSessionResponse.toDomain() = TutorClass(
+        id = id,
+        creatorId = tutorId,
+        creatorName = tutorName,
+        subject = subject,
+        scheduledTime = scheduledTime,
+        description = description,
+        maxStudents = maxStudents,
+        currentStudents = currentStudents,
+        status = status,
+        type = "CLASS"
+    )
+
+    private fun com.example.tutoruam_proyecto.ui.model.HelpRequestResponse.toDomain() = TutorClass(
+        id = id,
+        creatorId = studentId,
+        creatorName = studentName,
+        subject = subject,
+        description = description,
+        timeLimit = timeLimit,
+        type = "REQUEST"
+    )
+
+    private suspend fun <T> executeRequest(
+        request: suspend () -> Response<T>
+    ): ApiResult<T> {
+        return try {
+            val response = request()
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null) {
+                    ApiResult.Success(body)
+                } else {
+                    @Suppress("UNCHECKED_CAST")
+                    ApiResult.Success(Unit as T)
+                }
+            } else {
+                ApiResult.Error(
+                    code = response.code(),
+                    message = response.errorBody()?.string() ?: "Error"
+                )
+            }
+        } catch (e: IOException) {
+            ApiResult.Error(message = "Sin conexión", exception = e)
+        } catch (e: Exception) {
+            ApiResult.Error(message = e.message ?: "Error", exception = e)
+        }
+    }
+}
+</file>
+
+<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/screen/ChatDetailScreen.kt">
+package com.example.tutoruam_proyecto.ui.screen
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.Send
+import androidx.compose.material.icons.Icons
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.tutoruam_proyecto.ui.model.Message
+import com.example.tutoruam_proyecto.ui.service.ApiResult
+import com.example.tutoruam_proyecto.ui.service.ServiceLocator
+import com.example.tutoruam_proyecto.ui.service.TokenManager
+import com.example.tutoruam_proyecto.ui.viewmodel.ChatViewModel
+import com.example.tutoruam_proyecto.ui.viewmodel.ChatViewModelFactory
+import com.example.tutoruam_proyecto.ui.utils.DateUtils
+import kotlinx.coroutines.delay
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ChatDetailScreen(
+    chatId: Long,
+    otherUserName: String,
+    onBackClick: () -> Unit,
+    viewModel: ChatViewModel = viewModel(factory = ChatViewModelFactory(ServiceLocator.chatRepository))
+) {
+    var messageText by remember { mutableStateOf("") }
+    val messagesState by viewModel.messagesState.collectAsState()
+    val sendState by viewModel.sendMessageState.collectAsState()
+    val listState = rememberLazyListState()
+
+    DisposableEffect(chatId) {
+        val job = viewModel.startPolling(chatId)
+        onDispose { job.cancel() }
+    }
+
+    LaunchedEffect(sendState) {
+        if (sendState is ApiResult.Success) {
+            viewModel.clearSendState()
+            viewModel.loadMessages(chatId)
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+        TopAppBar(
+            title = { Text(otherUserName, fontWeight = FontWeight.Bold) },
+            navigationIcon = {
+                IconButton(onClick = onBackClick) {
+                    Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver")
+                }
+            },
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
+        )
+
+        when (val state = messagesState) {
+            is ApiResult.Loading -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+            is ApiResult.Success -> {
+                val messages = state.data
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier.weight(1f),
+                    reverseLayout = true,
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(messages.reversed()) { message ->
+                        MessageBubble(message = message, isMine = message.senderId == TokenManager.getUserId())
+                    }
+                }
+                LaunchedEffect(messages) {
+                    if (messages.isNotEmpty()) {
+                        listState.animateScrollToItem(0)
+                    }
+                }
+            }
+            is ApiResult.Error -> {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("Error: ${state.message}", color = MaterialTheme.colorScheme.error)
+                }
+            }
+            null -> Unit
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            OutlinedTextField(
+                value = messageText,
+                onValueChange = { messageText = it },
+                placeholder = { Text("Escribe un mensaje...") },
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(24.dp)
+            )
+            IconButton(
+                onClick = {
+                    if (messageText.isNotBlank()) {
+                        viewModel.sendMessage(chatId, messageText)
+                        messageText = ""
+                    }
+                },
+                enabled = sendState !is ApiResult.Loading
+            ) {
+                Icon(Icons.AutoMirrored.Rounded.Send, contentDescription = "Enviar", tint = MaterialTheme.colorScheme.primary)
+            }
+        }
+    }
+}
+
+@Composable
+fun MessageBubble(message: Message, isMine: Boolean) {
+    // 👇 Formato de hora para mensajes usando DateUtils para compatibilidad con API 24
+    val formattedTime = DateUtils.formatTime(message.sentAt)
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = if (isMine) Arrangement.End else Arrangement.Start
+    ) {
+        Surface(
+            shape = RoundedCornerShape(
+                topStart = 16.dp,
+                topEnd = 16.dp,
+                bottomStart = if (isMine) 16.dp else 4.dp,
+                bottomEnd = if (isMine) 4.dp else 16.dp
+            ),
+            color = if (isMine) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+            tonalElevation = 0.dp
+        ) {
+            Column(modifier = Modifier.padding(12.dp)) {
+                if (!isMine) {
+                    Text(
+                        text = message.senderName ?: "Usuario",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                }
+                Text(
+                    text = message.content,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (isMine) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = formattedTime,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                    modifier = Modifier.align(Alignment.End)
+                )
+            }
+        }
+    }
+}
+</file>
+
+<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/service/ServiceLocator.kt">
+package com.example.tutoruam_proyecto.ui.service
+
+import com.example.tutoruam_proyecto.ui.repository.*
+
+object ServiceLocator {
+
+    private val apiService: ApiService by lazy {
+        RetrofitClient.instance
+    }
+
+    val authRepository: AuthRepository by lazy {
+        AuthRepositoryImpl(apiService)
+    }
+
+    val chatRepository: ChatRepository by lazy {
+        ChatRepositoryImpl(apiService)
+    }
+
+    val tutoriasRepository: TutoriasRepository by lazy {
+        TutoriasRepositoryImpl(apiService)
+    }
+
+    val ratingRepository: RatingRepository by lazy {
+        RatingRepositoryImpl(apiService)
+    }
+}
+</file>
+
+<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/service/TokenManager.kt">
+package com.example.tutoruam_proyecto.ui.service
+
+import android.content.Context
+import android.content.SharedPreferences
+
+object TokenManager {
+    private const val PREFS_NAME = "tutoruam_prefs"
+    private const val KEY_TOKEN = "token"
+    private const val KEY_USER_ID = "user_id"
+    private const val KEY_NAME = "name"
+    private const val KEY_EMAIL = "email"
+    private const val KEY_ROLE = "role"
+
+    private var sharedPreferences: SharedPreferences? = null
+
+    fun init(context: Context) {
+        sharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    }
+
+    fun saveUser(token: String?, userId: Long?, name: String?, email: String?, role: String?) {
+        sharedPreferences?.edit()?.apply {
+            putString(KEY_TOKEN, token)
+            userId?.let { putLong(KEY_USER_ID, it) }
+            putString(KEY_NAME, name)
+            putString(KEY_EMAIL, email)
+            putString(KEY_ROLE, role)
+            apply()
+        }
+    }
+
+    fun getToken(): String? = sharedPreferences?.getString(KEY_TOKEN, null)
+    fun getUserId(): Long? = sharedPreferences?.getLong(KEY_USER_ID, -1L).takeIf { it != -1L }
+    fun getName(): String = sharedPreferences?.getString(KEY_NAME, "Usuario") ?: "Usuario"
+    fun getEmail(): String = sharedPreferences?.getString(KEY_EMAIL, "usuario@uam.edu.ni") ?: "usuario@uam.edu.ni"
+    fun getRole(): String = sharedPreferences?.getString(KEY_ROLE, "ESTUDIANTE") ?: "ESTUDIANTE"
+
+    fun clear() {
+        sharedPreferences?.edit()?.clear()?.apply()
+    }
+}
+</file>
+
+<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/theme/Theme.kt">
+package com.example.tutoruam_proyecto.ui.theme
+
+import android.app.Activity
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
+
+private val AcademicLightColors = lightColorScheme(
+    primary = PrimaryBlue,
+    onPrimary = OnPrimaryBlue,
+    primaryContainer = PrimaryContainerBlue,
+    onPrimaryContainer = OnPrimaryContainerBlue,
+    inversePrimary = InversePrimaryBlue,
+    secondary = SecondaryCool,
+    onSecondary = OnSecondaryCool,
+    secondaryContainer = SecondaryContainerCool,
+    onSecondaryContainer = OnSecondaryContainerCool,
+    tertiary = TertiaryNeutral,
+    onTertiary = OnTertiaryNeutral,
+    tertiaryContainer = TertiaryContainerNeutral,
+    onTertiaryContainer = OnTertiaryContainerNeutral,
+    background = BackgroundLight,
+    onBackground = OnBackgroundLight,
+    surface = SurfaceContainerLowest,
+    onSurface = OnSurfaceLight,
+    surfaceVariant = SurfaceVariantLight,
+    onSurfaceVariant = OnSurfaceVariantLight,
+    outline = OutlineMuted,
+    outlineVariant = OutlineVariantMuted,
+    error = ErrorRed,
+    onError = OnErrorWhite,
+    errorContainer = ErrorContainerRed,
+    onErrorContainer = OnErrorContainerRed
+)
+
+@Composable
+fun TutorUamProyectoTheme(
+    content: @Composable () -> Unit
+) {
+    val colorScheme = AcademicLightColors
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as Activity).window
+            window.statusBarColor = colorScheme.background.toArgb()
+            window.navigationBarColor = colorScheme.background.toArgb()
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = true
+        }
+    }
+
+    MaterialTheme(
+        colorScheme = colorScheme,
+        typography = Typography,
+        content = content
+    )
+}
+</file>
+
+<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/theme/Type.kt">
+package com.example.tutoruam_proyecto.ui.theme
+
+import androidx.compose.material3.Typography
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
+
+val Typography = Typography(
+    displayLarge = TextStyle(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.Bold,
+        fontSize = 30.sp,
+        lineHeight = 38.sp
+    ),
+    headlineMedium = TextStyle(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 22.sp,
+        lineHeight = 28.sp
+    ),
+    headlineSmall = TextStyle(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 18.sp,
+        lineHeight = 24.sp
+    ),
+    bodyLarge = TextStyle(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.Normal,
+        fontSize = 16.sp,
+        lineHeight = 24.sp
+    ),
+    bodyMedium = TextStyle(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.Normal,
+        fontSize = 14.sp,
+        lineHeight = 20.sp
+    ),
+    labelMedium = TextStyle(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.Medium,
+        fontSize = 12.sp,
+        lineHeight = 16.sp,
+        letterSpacing = 0.5.sp
+    )
+)
+</file>
+
+<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/viewmodel/ChatViewModel.kt">
+package com.example.tutoruam_proyecto.ui.viewmodel
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.tutoruam_proyecto.ui.model.Chat
+import com.example.tutoruam_proyecto.ui.model.Message
+import com.example.tutoruam_proyecto.ui.repository.ChatRepository
+import com.example.tutoruam_proyecto.ui.service.ApiResult
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+
+class ChatViewModel(
+    private val chatRepository: ChatRepository
+) : ViewModel() {
+
+    private val _chatsState = MutableStateFlow<ApiResult<List<Chat>>?>(null)
+    val chatsState: StateFlow<ApiResult<List<Chat>>?> = _chatsState.asStateFlow()
+
+    private val _messagesState = MutableStateFlow<ApiResult<List<Message>>?>(null)
+    val messagesState: StateFlow<ApiResult<List<Message>>?> = _messagesState.asStateFlow()
+
+    private val _sendMessageState = MutableStateFlow<ApiResult<Message>?>(null)
+    val sendMessageState: StateFlow<ApiResult<Message>?> = _sendMessageState.asStateFlow()
+
+    fun loadChats() {
+        viewModelScope.launch {
+            _chatsState.value = ApiResult.Loading
+            _chatsState.value = chatRepository.getChats()
+        }
+    }
+
+    fun loadMessages(chatId: Long, since: String? = null) {
+        viewModelScope.launch {
+            _messagesState.value = ApiResult.Loading
+            _messagesState.value = chatRepository.getMessages(chatId, since)
+        }
+    }
+
+    fun sendMessage(chatId: Long, content: String) {
+        viewModelScope.launch {
+            _sendMessageState.value = ApiResult.Loading
+            val result = chatRepository.sendMessage(chatId, content)
+            _sendMessageState.value = result
+            if (result is ApiResult.Success) {
+                loadMessages(chatId)
+            }
+        }
+    }
+
+    fun clearMessagesState() {
+        _messagesState.value = null
+    }
+
+    fun clearSendState() {
+        _sendMessageState.value = null
+    }
+
+    fun startPolling(chatId: Long): Job {
+        return viewModelScope.launch {
+            while (true) {
+                val result = chatRepository.getMessages(chatId)
+                if (result is ApiResult.Success) {
+                    _messagesState.value = result
+                }
+                delay(3000)
+            }
+        }
+    }
+}
+</file>
+
+<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/viewmodel/TutoriasViewModel.kt">
+package com.example.tutoruam_proyecto.ui.viewmodel
+
+import android.util.Log
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
+import com.example.tutoruam_proyecto.ui.model.*
+import com.example.tutoruam_proyecto.ui.repository.ChatRepository
+import com.example.tutoruam_proyecto.ui.repository.TutoriasRepository
+import com.example.tutoruam_proyecto.ui.service.ApiResult
+import com.example.tutoruam_proyecto.ui.service.TokenManager
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+
+class TutoriasViewModel(
+    private val repository: TutoriasRepository,
+    private val chatRepository: ChatRepository,
+    private val authRepository: com.example.tutoruam_proyecto.ui.repository.AuthRepository,
+    private val role: UserRole
+) : ViewModel() {
+
+    private val _itemsState = MutableStateFlow<ApiResult<List<TutorClass>>>(ApiResult.Loading)
+    val itemsState: StateFlow<ApiResult<List<TutorClass>>> = _itemsState.asStateFlow()
+
+    private val _myTutoriasState = MutableStateFlow<ApiResult<List<TutorClass>>>(ApiResult.Loading)
+    val myTutoriasState: StateFlow<ApiResult<List<TutorClass>>> = _myTutoriasState.asStateFlow()
+
+    private val _myClassesState = MutableStateFlow<ApiResult<List<TutorClass>>>(ApiResult.Loading)
+    val myClassesState: StateFlow<ApiResult<List<TutorClass>>> = _myClassesState.asStateFlow()
+
+    private val _actionState = MutableStateFlow<ApiResult<Any>?>(null)
+    val actionState: StateFlow<ApiResult<Any>?> = _actionState.asStateFlow()
+
+    private val _classStudentsState = MutableStateFlow<ApiResult<List<UserProfile>>>(ApiResult.Loading)
+    val classStudentsState: StateFlow<ApiResult<List<UserProfile>>> = _classStudentsState.asStateFlow()
+
+    private val _classDetailState = MutableStateFlow<ApiResult<TutorClass>>(ApiResult.Loading)
+    val classDetailState: StateFlow<ApiResult<TutorClass>> = _classDetailState.asStateFlow()
+
+    init {
+        loadData()
+    }
+
+    fun loadData(subject: String? = null) {
+        viewModelScope.launch {
+            _itemsState.value = ApiResult.Loading
+            _itemsState.value = if (role == UserRole.TUTOR) {
+                repository.getRequests(subject)
+            } else {
+                repository.getClasses(subject)
+            }
+        }
+    }
+
+    fun loadMyPosts() {
+        viewModelScope.launch {
+            _itemsState.value = ApiResult.Loading
+            val userId = TokenManager.getUserId()
+            _itemsState.value = if (role == UserRole.TUTOR) {
+                repository.getClasses(tutorId = userId)
+            } else {
+                repository.getRequests(studentId = userId)
+            }
+        }
+    }
+
+    fun createPost(subject: String, time: String, description: String, maxStudents: Int) {
+        viewModelScope.launch {
+            _actionState.value = ApiResult.Loading
+            val request = CreateClassRequest(
+                subject = subject,
+                scheduledTime = time,
+                description = description,
+                maxStudents = maxStudents
+            )
+            val result = if (role == UserRole.TUTOR) {
+                repository.createClass(request)
+            } else {
+                repository.createRequest(request)
+            }
+            _actionState.value = result as ApiResult<Any>
+            if (result is ApiResult.Success) {
+                loadData()
+            }
+        }
+    }
+
+    fun joinClass(classId: Long, creatorName: String, creatorId: Long) {
+        viewModelScope.launch {
+            _actionState.value = ApiResult.Loading
+            val result = repository.joinClass(classId)
+            if (result is ApiResult.Success) {
+                // Ahora obtener el chat entre el usuario actual y el creador (tutor o estudiante)
+                val chatsResult = chatRepository.getChats()
+                if (chatsResult is ApiResult.Success) {
+                    val lastChat = chatsResult.data.lastOrNull { it.tutorId == creatorId || it.studentId == creatorId }
+                    if (lastChat != null) {
+                        _actionState.value = ApiResult.Success(Pair(lastChat.id, creatorName))
+                    } else {
+                        _actionState.value = ApiResult.Success(Unit)
+                    }
+                } else {
+                    _actionState.value = ApiResult.Success(Unit)
+                }
+                loadData()
+            } else {
+                _actionState.value = result as ApiResult<Any>
+            }
+        }
+    }
+
+    fun assignRequest(requestId: Long) {
+        viewModelScope.launch {
+            _actionState.value = ApiResult.Loading
+            val result = repository.assignRequest(requestId)
+            _actionState.value = result as ApiResult<Any>
+            if (result is ApiResult.Success) {
+                loadData()
+            }
+        }
+    }
+
+    fun findOrCreateChatWithUser(recipientId: Long, onResult: (Chat) -> Unit) {
+        viewModelScope.launch {
+            val result = authRepository.createChat(recipientId)
+            if (result is ApiResult.Success) {
+                onResult(result.data)
+            }
+        }
+    }
+
+    fun loadClassStudents(classId: Long) {
+        viewModelScope.launch {
+            _classStudentsState.value = ApiResult.Loading
+            _classStudentsState.value = repository.getClassStudents(classId)
+        }
+    }
+
+    fun expelStudent(classId: Long, studentId: Long) {
+        viewModelScope.launch {
+            _actionState.value = ApiResult.Loading
+            val result = repository.removeStudent(classId, studentId)
+            _actionState.value = result as ApiResult<Any>
+            if (result is ApiResult.Success) {
+                loadClassStudents(classId) // recargar lista
+                loadData() // recargar lista principal
+            }
+        }
+    }
+
+    fun createGroupChatForClass(classId: Long, onSuccess: (Chat) -> Unit) {
+        viewModelScope.launch {
+            _actionState.value = ApiResult.Loading
+            val result = repository.createGroupChat(classId)
+            if (result is ApiResult.Success) {
+                onSuccess(result.data)
+            }
+            _actionState.value = result as ApiResult<Any>
+        }
+    }
+
+    fun updatePost(item: TutorClass, subject: String, time: String, description: String, maxStudents: Int) {
+        viewModelScope.launch {
+            _actionState.value = ApiResult.Loading
+            val result = if (item.type == "CLASS") {
+                val request = CreateClassRequest(subject, time, description, maxStudents)
+                repository.updateClass(item.id, request)
+            } else {
+                val request = CreateHelpRequest(subject, description, time) // Reusamos el campo 'time' para timeLimit
+                repository.updateRequest(item.id, request)
+            }
+            _actionState.value = result as ApiResult<Any>
+            if (result is ApiResult.Success) {
+                loadMyPosts() // Recargar mis publicaciones
+            }
+        }
+    }
+
+    fun deletePost(item: TutorClass) {
+        viewModelScope.launch {
+            _actionState.value = ApiResult.Loading
+            val result = if (item.type == "CLASS") {
+                repository.deleteClass(item.id)
+            } else {
+                repository.deleteRequest(item.id)
+            }
+            _actionState.value = result as ApiResult<Any>
+            if (result is ApiResult.Success) {
+                loadMyPosts() // Recargar mis publicaciones
+            }
+        }
+    }
+
+    fun clearActionState() {
+        _actionState.value = null
+    }
+
+    fun loadMyTutorias() {
+        viewModelScope.launch {
+            _myTutoriasState.value = ApiResult.Loading
+            _myTutoriasState.value = repository.getMyTutoriasAsTutor()
+        }
+    }
+
+    fun loadMyClasses() {
+        viewModelScope.launch {
+            _myClassesState.value = ApiResult.Loading
+            _myClassesState.value = repository.getMyClassesAsStudent()
+        }
+    }
+
+    fun loadClassDetail(classId: Long) {
+        viewModelScope.launch {
+            _classDetailState.value = ApiResult.Loading
+            _classDetailState.value = repository.getClassById(classId)
+        }
+    }
+
+    fun toggleClassStatus(classId: Long, currentStatus: String) {
+        viewModelScope.launch {
+            _actionState.value = ApiResult.Loading
+            val newStatus = if (currentStatus == "OPEN") "CLOSED" else "OPEN"
+            val result = repository.updateClassStatus(classId, newStatus)
+            _actionState.value = result as ApiResult<Any>
+            if (result is ApiResult.Success) {
+                loadData()
+                loadClassDetail(classId)
+            }
+        }
+    }
+
+    fun getGroupChatForClass(classId: Long, onSuccess: (Chat) -> Unit) {
+        viewModelScope.launch {
+            val chatsResult = chatRepository.getChats()
+            if (chatsResult is ApiResult.Success) {
+                // Buscamos un chat que sea grupal y coincida con el ID de la clase
+                // Nota: El backend debe devolver el classId en el objeto Chat o identificarlo por el nombre/tipo
+                val chat = chatsResult.data.firstOrNull { it.isGroup && it.groupName?.contains("Clase $classId") == true }
+                if (chat != null) {
+                    onSuccess(chat)
+                } else {
+                    // Si no existe, lo intentamos crear (el repo ya maneja findOrCreate en el backend)
+                    createGroupChatForClass(classId, onSuccess)
+                }
+            }
+        }
+    }
+
+    fun getChatWithCreator(classId: Long, creatorId: Long, onSuccess: (Chat) -> Unit) {
+        viewModelScope.launch {
+            val chatsResult = chatRepository.getChats()
+            if (chatsResult is ApiResult.Success) {
+                val chat = chatsResult.data.firstOrNull { it.tutorId == creatorId || it.studentId == creatorId }
+                if (chat != null) {
+                    onSuccess(chat)
+                }
+            }
+        }
+    }
+}
+
+class TutoriasViewModelFactory(
+    private val repository: TutoriasRepository,
+    private val chatRepository: ChatRepository,
+    private val authRepository: com.example.tutoruam_proyecto.ui.repository.AuthRepository,
+    private val role: UserRole
+) : ViewModelProvider.Factory {
+    override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(TutoriasViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return TutoriasViewModel(repository, chatRepository, authRepository, role) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
+    }
+}
+</file>
+
+<file path="build.gradle.kts">
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+plugins {
+    alias(libs.plugins.android.application) apply false
+    alias(libs.plugins.kotlin.compose) apply false
+    alias(libs.plugins.kotlinx.serialization) apply false
+}
+</file>
+
+<file path="app/src/main/AndroidManifest.xml">
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application
+        android:allowBackup="true"
+        android:usesCleartextTraffic="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.TutorUamProyecto">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:theme="@style/Theme.TutorUamProyecto">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>
+</file>
+
 <file path="app/src/main/java/com/example/tutoruam_proyecto/ui/repository/AuthRepositoryImpl.kt">
 package com.example.tutoruam_proyecto.ui.repository
 
 import android.util.Log
-import com.example.tutoruam_proyecto.ui.model.LoginRequest
-import com.example.tutoruam_proyecto.ui.model.LoginResponse
-import com.example.tutoruam_proyecto.ui.model.RegisterRequest
+import com.example.tutoruam_proyecto.ui.model.*
 import com.example.tutoruam_proyecto.ui.service.ApiResult
 import com.example.tutoruam_proyecto.ui.service.ApiService
 import com.example.tutoruam_proyecto.ui.service.TokenManager
@@ -1951,6 +3691,24 @@ class AuthRepositoryImpl(
                 ApiResult.Error(
                     code = response.code(),
                     message = response.errorBody()?.string() ?: "Error al cambiar rol"
+                )
+            }
+        } catch (e: Exception) {
+            ApiResult.Error(message = e.message ?: "Error inesperado", exception = e)
+        }
+    }
+
+    override suspend fun createChat(recipientId: Long): ApiResult<Chat> {
+        return try {
+            val response = apiService.createChat(recipientId)
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null) ApiResult.Success(body)
+                else ApiResult.Error(message = "Respuesta vacía")
+            } else {
+                ApiResult.Error(
+                    code = response.code(),
+                    message = response.errorBody()?.string() ?: "Error al crear chat"
                 )
             }
         } catch (e: Exception) {
@@ -2308,7 +4066,11 @@ interface ApiService {
 
     // Clases y Solicitudes
     @GET("classes")
-    suspend fun getClasses(@Query("subject") subject: String? = null): Response<List<ClassSessionResponse>>
+    suspend fun getClasses(
+        @Query("subject") subject: String? = null,
+        @Query("tutorId") tutorId: Long? = null,
+        @Query("studentId") studentId: Long? = null
+    ): Response<List<ClassSessionResponse>>
 
     @POST("classes")
     suspend fun createClass(@Body request: CreateClassRequest): Response<ClassSessionResponse>
@@ -2317,7 +4079,11 @@ interface ApiService {
     suspend fun joinClass(@Path("id") classId: Long): Response<Unit>
 
     @GET("requests")
-    suspend fun getRequests(@Query("subject") subject: String? = null): Response<List<HelpRequestResponse>>
+    suspend fun getRequests(
+        @Query("subject") subject: String? = null,
+        @Query("studentId") studentId: Long? = null,
+        @Query("tutorAssignedId") tutorAssignedId: Long? = null
+    ): Response<List<HelpRequestResponse>>
 
     @POST("requests")
     suspend fun createRequest(@Body request: CreateClassRequest): Response<HelpRequestResponse>
@@ -2340,6 +4106,62 @@ interface ApiService {
 
     @POST("users/me/role")
     suspend fun changeRole(@Query("newRole") newRole: String): Response<Unit>
+
+    // --- NUEVOS ENDPOINTS ---
+
+    @GET("classes/{id}/students")
+    suspend fun getClassStudents(@Path("id") classId: Long): Response<List<UserProfile>>
+
+    @DELETE("classes/{id}/students/{studentId}")
+    suspend fun removeStudent(@Path("id") classId: Long, @Path("studentId") studentId: Long): Response<Unit>
+
+    @POST("classes/{id}/create-chat")
+    suspend fun createGroupChat(@Path("id") classId: Long): Response<Chat>
+
+    @POST("chats")
+    suspend fun createChat(@Query("recipientId") recipientId: Long): Response<Chat>
+
+    @POST("chats/{chatId}/participants")
+    suspend fun addParticipant(@Path("chatId") chatId: Long, @Query("userId") userId: Long): Response<Unit>
+
+    @DELETE("chats/{chatId}/participants/{userId}")
+    suspend fun removeParticipant(@Path("chatId") chatId: Long, @Path("userId") userId: Long): Response<Unit>
+
+    @GET("chats/{chatId}/participants")
+    suspend fun getChatParticipants(@Path("chatId") chatId: Long): Response<List<UserProfile>>
+
+    // --- Endpoints para clases ---
+    @PUT("classes/{id}")
+    suspend fun updateClass(@Path("id") classId: Long, @Body request: CreateClassRequest): Response<ClassSessionResponse>
+
+    @DELETE("classes/{id}")
+    suspend fun deleteClass(@Path("id") classId: Long): Response<Unit>
+
+    // --- Endpoints para solicitudes ---
+    @PUT("requests/{id}")
+    suspend fun updateRequest(@Path("id") requestId: Long, @Body request: CreateHelpRequest): Response<HelpRequestResponse>
+
+    @DELETE("requests/{id}")
+    suspend fun deleteRequest(@Path("id") requestId: Long): Response<Unit>
+
+    @POST("requests/{id}/assign")
+    suspend fun assignRequest(@Path("id") requestId: Long): Response<Unit>
+
+    @PATCH("classes/{id}/status")
+    suspend fun updateClassStatus(@Path("id") classId: Long, @Body request: UpdateClassStatusRequest): Response<Unit>
+
+    @GET("classes/{id}")
+    suspend fun getClassById(@Path("id") classId: Long): Response<ClassSessionResponse>
+
+    // --- Ratings ---
+    @POST("ratings")
+    suspend fun createRating(@Body request: RatingRequest): Response<Rating>
+
+    @GET("ratings/tutor/{tutorId}")
+    suspend fun getRatingsByTutor(@Path("tutorId") tutorId: Long): Response<List<Rating>>
+
+    @GET("ratings/tutor/{tutorId}/average")
+    suspend fun getAverageRating(@Path("tutorId") tutorId: Long): Response<Double>
 }
 </file>
 
@@ -2355,8 +4177,10 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
 
+    // IP para dispositivo físico: 192.168.1.14
+    // IP para emulador Android: 10.0.2.2
     private const val BASE_URL = "http://192.168.1.14:8082/api/v1/"
-    private const val TIMEOUT = 10L
+    private const val TIMEOUT = 15L // Aumentado ligeramente para redes locales
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = if (BuildConfig.DEBUG) {
@@ -2376,14 +4200,13 @@ object RetrofitClient {
             val url = request.url.toString()
 
             // Solo agregar token si NO es una petición de autenticación
+            val requestBuilder = request.newBuilder()
             if (!url.contains("/auth/")) {
                 TokenManager.getToken()?.let { token ->
-                    val requestBuilder = request.newBuilder()
-                        .addHeader("Authorization", "Bearer $token")
-                    return@addInterceptor chain.proceed(requestBuilder.build())
+                    requestBuilder.addHeader("Authorization", "Bearer $token")
                 }
             }
-            chain.proceed(request)
+            chain.proceed(requestBuilder.build())
         }
         .build()
 
@@ -2398,185 +4221,54 @@ object RetrofitClient {
 }
 </file>
 
-<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/service/ServiceLocator.kt">
-package com.example.tutoruam_proyecto.ui.service
-
-import com.example.tutoruam_proyecto.ui.repository.*
-
-object ServiceLocator {
-
-    private val apiService: ApiService by lazy {
-        RetrofitClient.instance
-    }
-
-    val authRepository: AuthRepository by lazy {
-        AuthRepositoryImpl(apiService)
-    }
-
-    val chatRepository: ChatRepository by lazy {
-        ChatRepositoryImpl(apiService)
-    }
-
-    val tutoriasRepository: TutoriasRepository by lazy {
-        TutoriasRepositoryImpl(apiService)
-    }
-}
-</file>
-
-<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/service/TokenManager.kt">
-package com.example.tutoruam_proyecto.ui.service
-
-import android.content.Context
-import android.content.SharedPreferences
-
-object TokenManager {
-    private const val PREFS_NAME = "tutoruam_prefs"
-    private const val KEY_TOKEN = "token"
-    private const val KEY_USER_ID = "user_id"
-    private const val KEY_NAME = "name"
-    private const val KEY_EMAIL = "email"
-    private const val KEY_ROLE = "role"
-
-    private var sharedPreferences: SharedPreferences? = null
-
-    fun init(context: Context) {
-        sharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-    }
-
-    fun saveUser(token: String?, userId: Long?, name: String?, email: String?, role: String?) {
-        sharedPreferences?.edit()?.apply {
-            putString(KEY_TOKEN, token)
-            userId?.let { putLong(KEY_USER_ID, it) }
-            putString(KEY_NAME, name)
-            putString(KEY_EMAIL, email)
-            putString(KEY_ROLE, role)
-            apply()
-        }
-    }
-
-    fun getToken(): String? = sharedPreferences?.getString(KEY_TOKEN, null)
-    fun getUserId(): Long? = sharedPreferences?.getLong(KEY_USER_ID, -1L).takeIf { it != -1L }
-    fun getName(): String = sharedPreferences?.getString(KEY_NAME, "Usuario") ?: "Usuario"
-    fun getEmail(): String = sharedPreferences?.getString(KEY_EMAIL, "usuario@uam.edu.ni") ?: "usuario@uam.edu.ni"
-    fun getRole(): String = sharedPreferences?.getString(KEY_ROLE, "ESTUDIANTE") ?: "ESTUDIANTE"
-
-    fun clear() {
-        sharedPreferences?.edit()?.clear()?.apply()
-    }
-}
-</file>
-
-<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/theme/Theme.kt">
+<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/theme/Color.kt">
 package com.example.tutoruam_proyecto.ui.theme
 
-import android.app.Activity
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.lightColorScheme
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
-import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.platform.LocalView
-import androidx.core.view.WindowCompat
+import androidx.compose.ui.graphics.Color
 
-private val AcademicLightColors = lightColorScheme(
-    primary = PrimaryBlue,
-    onPrimary = OnPrimaryBlue,
-    primaryContainer = PrimaryContainerBlue,
-    onPrimaryContainer = OnPrimaryContainerBlue,
-    inversePrimary = InversePrimaryBlue,
-    secondary = SecondaryCool,
-    onSecondary = OnSecondaryCool,
-    secondaryContainer = SecondaryContainerCool,
-    onSecondaryContainer = OnSecondaryContainerCool,
-    tertiary = TertiaryNeutral,
-    onTertiary = OnTertiaryNeutral,
-    tertiaryContainer = TertiaryContainerNeutral,
-    onTertiaryContainer = OnTertiaryContainerNeutral,
-    background = BackgroundLight,
-    onBackground = OnBackgroundLight,
-    surface = SurfaceContainerLowest,
-    onSurface = OnSurfaceLight,
-    surfaceVariant = SurfaceVariantLight,
-    onSurfaceVariant = OnSurfaceVariantLight,
-    outline = OutlineMuted,
-    outlineVariant = OutlineVariantMuted,
-    error = ErrorRed,
-    onError = OnErrorWhite,
-    errorContainer = ErrorContainerRed,
-    onErrorContainer = OnErrorContainerRed
-)
+// Primary Color System (UAM Heritage Blue)
+val PrimaryBlue = Color(0xFF00457C)
+val OnPrimaryBlue = Color(0xFFFFFFFF)
+val PrimaryContainerBlue = Color(0xFF005DA4)
+val OnPrimaryContainerBlue = Color(0xFFBAD6FF)
+val InversePrimaryBlue = Color(0xFFA2C9FF)
 
-@Composable
-fun TutorUamProyectoTheme(
-    content: @Composable () -> Unit
-) {
-    val colorScheme = AcademicLightColors
-    val view = LocalView.current
-    if (!view.isInEditMode) {
-        SideEffect {
-            val window = (view.context as Activity).window
-            window.statusBarColor = colorScheme.background.toArgb()
-            window.navigationBarColor = colorScheme.background.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = true
-        }
-    }
+// Secondary Color System (Cool Slate Blue)
+val SecondaryCool = Color(0xFF576066)
+val OnSecondaryCool = Color(0xFFFFFFFF)
+val SecondaryContainerCool = Color(0xFFDBE4EB)
+val OnSecondaryContainerCool = Color(0xFF5D666C)
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
-    )
-}
-</file>
+// Tertiary Color System (Academic Charcoal)
+val TertiaryNeutral = Color(0xFF364552)
+val OnTertiaryNeutral = Color(0xFFFFFFFF)
+val TertiaryContainerNeutral = Color(0xFF4D5D6B)
+val OnTertiaryContainerNeutral = Color(0xFFC5D6E6)
 
-<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/theme/Type.kt">
-package com.example.tutoruam_proyecto.ui.theme
+// Surface & Background System
+val BackgroundLight = Color(0xFFF8F9FB)
+val OnBackgroundLight = Color(0xFF191C1E)
 
-import androidx.compose.material3.Typography
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
+val SurfaceLight = Color(0xFFF8F9FB)
+val OnSurfaceLight = Color(0xFF191C1E)
+val SurfaceVariantLight = Color(0xFFE1E2E4)
+val OnSurfaceVariantLight = Color(0xFF414751)
 
-val Typography = Typography(
-    displayLarge = TextStyle(
-        fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.Bold,
-        fontSize = 30.sp,
-        lineHeight = 38.sp
-    ),
-    headlineMedium = TextStyle(
-        fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 22.sp,
-        lineHeight = 28.sp
-    ),
-    headlineSmall = TextStyle(
-        fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 18.sp,
-        lineHeight = 24.sp
-    ),
-    bodyLarge = TextStyle(
-        fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.Normal,
-        fontSize = 16.sp,
-        lineHeight = 24.sp
-    ),
-    bodyMedium = TextStyle(
-        fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.Normal,
-        fontSize = 14.sp,
-        lineHeight = 20.sp
-    ),
-    labelMedium = TextStyle(
-        fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.Medium,
-        fontSize = 12.sp,
-        lineHeight = 16.sp,
-        letterSpacing = 0.5.sp
-    )
-)
+val SurfaceContainerLowest = Color(0xFFFFFFFF)
+val SurfaceContainerLow = Color(0xFFF2F4F6)
+val SurfaceContainer = Color(0xFFEDEEF0)
+val SurfaceContainerHigh = Color(0xFFE7E8EA)
+val SurfaceContainerHighest = Color(0xFFE1E2E4)
+
+// Outline & Borders
+val OutlineMuted = Color(0xFF727782)
+val OutlineVariantMuted = Color(0xFFC1C7D2)
+
+// Error States
+val ErrorRed = Color(0xFFBA1A1A)
+val OnErrorWhite = Color(0xFFFFFFFF)
+val ErrorContainerRed = Color(0xFFFFDAD6)
+val OnErrorContainerRed = Color(0xFF93000A)
 </file>
 
 <file path="app/src/main/java/com/example/tutoruam_proyecto/ui/viewmodel/LoginViewModel.kt">
@@ -2623,13 +4315,65 @@ class LoginViewModel(
 }
 </file>
 
-<file path="build.gradle.kts">
-// Top-level build file where you can add configuration options common to all sub-projects/modules.
-plugins {
-    alias(libs.plugins.android.application) apply false
-    alias(libs.plugins.kotlin.compose) apply false
-    alias(libs.plugins.kotlinx.serialization) apply false
-}
+<file path="gradle/libs.versions.toml">
+[versions]
+agp = "9.1.1"
+converterGsonVersion = "2.9.0"
+kotlin = "2.2.10"
+coreKtx = "1.18.0"
+junit = "4.13.2"
+junitVersion = "1.3.0"
+espressoCore = "3.7.0"
+kotlinxCoroutinesAndroid = "1.11.0"
+lifecycleRuntimeKtx = "2.10.0"
+activityCompose = "1.13.0"
+composeBom = "2026.02.01"
+lifecycleRuntimeKtxVersion = "2.7.0"
+loggingInterceptorVersion = "4.12.0"
+navigationCompose = "2.9.8"
+kotlinxSerializationJson = "1.11.0"
+okhttp = "5.4.0"
+retrofit = "3.0.0"
+converterGson = "3.0.0"
+loggingInterceptor = "5.3.2"
+firebaseAppdistributionGradle = "5.2.1"
+retrofitVersion = "2.9.0"
+
+[libraries]
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
+androidx-lifecycle-runtime-ktx-v270 = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtxVersion" }
+androidx-lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "lifecycleRuntimeKtx" }
+androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
+androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+androidx-compose-ui = { group = "androidx.compose.ui", name = "ui" }
+androidx-compose-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
+androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
+androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
+androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
+androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
+androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
+androidx-compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
+androidx-lifecycle-viewmodel-ktx = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycleRuntimeKtx" }
+androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
+converter-gson-v290 = { module = "com.squareup.retrofit2:converter-gson", version.ref = "converterGsonVersion" }
+kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinxCoroutinesAndroid" }
+kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
+logging-interceptor-v4120 = { module = "com.squareup.okhttp3:logging-interceptor", version.ref = "loggingInterceptorVersion" }
+okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
+retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
+converter-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "converterGson" }
+logging-interceptor = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "loggingInterceptor" }
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
+androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+firebase-appdistribution-gradle = { group = "com.google.firebase", name = "firebase-appdistribution-gradle", version.ref = "firebaseAppdistributionGradle" }
+retrofit-v290 = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofitVersion" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 </file>
 
 <file path="app/build.gradle.kts">
@@ -2758,6 +4502,7 @@ import com.example.tutoruam_proyecto.ui.service.ServiceLocator
 import com.example.tutoruam_proyecto.ui.service.TokenManager
 import com.example.tutoruam_proyecto.ui.viewmodel.ChatViewModel
 import com.example.tutoruam_proyecto.ui.viewmodel.ChatViewModelFactory
+import com.example.tutoruam_proyecto.ui.utils.DateUtils
 
 @Composable
 fun ChatScreen(
@@ -2810,14 +4555,23 @@ fun ChatScreen(
                     contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 96.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    items(chats.filter { it.tutorName.contains(searchQuery, ignoreCase = true) || it.studentName.contains(searchQuery, ignoreCase = true) }) { chat ->
+                    val filteredChats = chats.filter {
+                        val name = if (it.isGroup) it.groupName else (if (it.tutorId == TokenManager.getUserId()) it.studentName else it.tutorName)
+                        name?.contains(searchQuery, ignoreCase = true) == true
+                    }
+                    items(filteredChats) { chat ->
                         ChatItemCard(chat = chat, onClick = { onChatClick(chat) })
                     }
                 }
             }
             is ApiResult.Error -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Error al cargar chats: ${state.message}", color = MaterialTheme.colorScheme.error)
+                    val errorMsg = if (state.code == 500) {
+                        "Error en el servidor al cargar chats. Inténtalo más tarde."
+                    } else {
+                        "Error al cargar chats: ${state.message}"
+                    }
+                    Text(errorMsg, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(20.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                 }
             }
             null -> Unit
@@ -2836,19 +4590,25 @@ fun ChatItemCard(chat: Chat, onClick: () -> Unit) {
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            val displayName = if (chat.tutorId == TokenManager.getUserId()) chat.studentName else chat.tutorName
+            val displayName = if (chat.isGroup) {
+                chat.groupName ?: "Grupo"
+            } else {
+                if (chat.tutorId == TokenManager.getUserId()) chat.studentName ?: "Estudiante" else chat.tutorName ?: "Tutor"
+            }
             Box(
                 modifier = Modifier
                     .size(56.dp)
-                    .background(Color(0xFFE2E7ED), CircleShape),
+                    .background(if (chat.isGroup) MaterialTheme.colorScheme.secondaryContainer else Color(0xFFE2E7ED), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    displayName.first().toString(),
+                    displayName.firstOrNull()?.toString() ?: "?",
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
                     fontSize = 20.sp
@@ -2859,164 +4619,59 @@ fun ChatItemCard(chat: Chat, onClick: () -> Unit) {
                 Text(
                     displayName,
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1 // 👈 Para que no se desborde
                 )
                 
-                if (chat.lastMessage != null) {
+                // 👇 Ahora el mensaje y el contador están en una fila
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Text(
-                        chat.lastMessage,
+                        text = chat.lastMessage ?: "Nuevo chat",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1
+                        maxLines = 1,
+                        modifier = Modifier.weight(1f) // Ocupa el espacio sobrante
                     )
+                    
+                    // 👇 Contador de mensajes no leídos (en la esquina superior derecha)
+                    if (chat.unreadCount > 0) {
+                        Surface(
+                            color = MaterialTheme.colorScheme.primary,
+                            shape = CircleShape,
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text(
+                                    chat.unreadCount.toString(),
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                )
+                            }
+                        }
+                    }
                 }
             }
-
-            // Date and Notification on the right
+            
+            // 👇 Fecha y hora en la columna derecha
             Column(
                 horizontalAlignment = Alignment.End,
                 verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = chat.lastMessageAt ?: "",
+                    text = if (chat.lastMessageAt != null) DateUtils.formatDate(chat.lastMessageAt) else "",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                
-                Spacer(modifier = Modifier.height(4.dp))
-
-                if (chat.unreadCount > 0) {
-                    Surface(
-                        color = MaterialTheme.colorScheme.primary,
-                        shape = CircleShape,
-                        modifier = Modifier.size(24.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Text(
-                                chat.unreadCount.toString(),
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 12.sp,
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                            )
-                        }
-                    }
-                }
             }
         }
     }
 }
-</file>
-
-<file path="app/src/main/java/com/example/tutoruam_proyecto/ui/theme/Color.kt">
-package com.example.tutoruam_proyecto.ui.theme
-
-import androidx.compose.ui.graphics.Color
-
-// Primary Color System (UAM Heritage Blue)
-val PrimaryBlue = Color(0xFF00457C)
-val OnPrimaryBlue = Color(0xFFFFFFFF)
-val PrimaryContainerBlue = Color(0xFF005DA4)
-val OnPrimaryContainerBlue = Color(0xFFBAD6FF)
-val InversePrimaryBlue = Color(0xFFA2C9FF)
-
-// Secondary Color System (Cool Slate Blue)
-val SecondaryCool = Color(0xFF576066)
-val OnSecondaryCool = Color(0xFFFFFFFF)
-val SecondaryContainerCool = Color(0xFFDBE4EB)
-val OnSecondaryContainerCool = Color(0xFF5D666C)
-
-// Tertiary Color System (Academic Charcoal)
-val TertiaryNeutral = Color(0xFF364552)
-val OnTertiaryNeutral = Color(0xFFFFFFFF)
-val TertiaryContainerNeutral = Color(0xFF4D5D6B)
-val OnTertiaryContainerNeutral = Color(0xFFC5D6E6)
-
-// Surface & Background System
-val BackgroundLight = Color(0xFFF8F9FB)
-val OnBackgroundLight = Color(0xFF191C1E)
-
-val SurfaceLight = Color(0xFFF8F9FB)
-val OnSurfaceLight = Color(0xFF191C1E)
-val SurfaceVariantLight = Color(0xFFE1E2E4)
-val OnSurfaceVariantLight = Color(0xFF414751)
-
-val SurfaceContainerLowest = Color(0xFFFFFFFF)
-val SurfaceContainerLow = Color(0xFFF2F4F6)
-val SurfaceContainer = Color(0xFFEDEEF0)
-val SurfaceContainerHigh = Color(0xFFE7E8EA)
-val SurfaceContainerHighest = Color(0xFFE1E2E4)
-
-// Outline & Borders
-val OutlineMuted = Color(0xFF727782)
-val OutlineVariantMuted = Color(0xFFC1C7D2)
-
-// Error States
-val ErrorRed = Color(0xFFBA1A1A)
-val OnErrorWhite = Color(0xFFFFFFFF)
-val ErrorContainerRed = Color(0xFFFFDAD6)
-val OnErrorContainerRed = Color(0xFF93000A)
-</file>
-
-<file path="gradle/libs.versions.toml">
-[versions]
-agp = "9.1.1"
-converterGsonVersion = "2.9.0"
-kotlin = "2.2.10"
-coreKtx = "1.18.0"
-junit = "4.13.2"
-junitVersion = "1.3.0"
-espressoCore = "3.7.0"
-kotlinxCoroutinesAndroid = "1.11.0"
-lifecycleRuntimeKtx = "2.10.0"
-activityCompose = "1.13.0"
-composeBom = "2026.02.01"
-lifecycleRuntimeKtxVersion = "2.7.0"
-loggingInterceptorVersion = "4.12.0"
-navigationCompose = "2.9.8"
-kotlinxSerializationJson = "1.11.0"
-okhttp = "5.4.0"
-retrofit = "3.0.0"
-converterGson = "3.0.0"
-loggingInterceptor = "5.3.2"
-firebaseAppdistributionGradle = "5.2.1"
-retrofitVersion = "2.9.0"
-
-[libraries]
-androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
-androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
-androidx-lifecycle-runtime-ktx-v270 = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtxVersion" }
-androidx-lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "lifecycleRuntimeKtx" }
-androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
-androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
-androidx-compose-ui = { group = "androidx.compose.ui", name = "ui" }
-androidx-compose-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
-androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
-androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
-androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
-androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
-androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
-androidx-compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
-androidx-lifecycle-viewmodel-ktx = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycleRuntimeKtx" }
-androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
-converter-gson-v290 = { module = "com.squareup.retrofit2:converter-gson", version.ref = "converterGsonVersion" }
-kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinxCoroutinesAndroid" }
-kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
-logging-interceptor-v4120 = { module = "com.squareup.okhttp3:logging-interceptor", version.ref = "loggingInterceptorVersion" }
-okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
-retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
-converter-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "converterGson" }
-logging-interceptor = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "loggingInterceptor" }
-junit = { group = "junit", name = "junit", version.ref = "junit" }
-androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
-androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
-firebase-appdistribution-gradle = { group = "com.google.firebase", name = "firebase-appdistribution-gradle", version.ref = "firebaseAppdistributionGradle" }
-retrofit-v290 = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofitVersion" }
-
-[plugins]
-android-application = { id = "com.android.application", version.ref = "agp" }
-kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
-kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 </file>
 
 <file path="app/src/main/java/com/example/tutoruam_proyecto/ui/navigation/AppNavigation.kt">
@@ -3126,7 +4781,19 @@ object ChatDestination
 object PerfilDestination
 
 @Serializable
+object MyPostsDestination
+
+@Serializable
+object MyTutoriasDestination
+
+@Serializable
+object MyClassesDestination
+
+@Serializable
 data class ChatDetailDestination(val chatId: Long, val otherUserName: String)
+
+@Serializable
+data class ClassDetailDestination(val classId: Long, val role: com.example.tutoruam_proyecto.ui.model.UserRole)
 </file>
 
 <file path="app/src/main/java/com/example/tutoruam_proyecto/ui/screen/HomeScreen.kt">
@@ -3166,6 +4833,10 @@ import androidx.navigation.compose.rememberNavController
 import com.example.tutoruam_proyecto.ui.model.UserRole
 import com.example.tutoruam_proyecto.ui.navigation.ChatDestination
 import com.example.tutoruam_proyecto.ui.navigation.ChatDetailDestination
+import com.example.tutoruam_proyecto.ui.navigation.ClassDetailDestination
+import com.example.tutoruam_proyecto.ui.navigation.MyClassesDestination
+import com.example.tutoruam_proyecto.ui.navigation.MyPostsDestination
+import com.example.tutoruam_proyecto.ui.navigation.MyTutoriasDestination
 import com.example.tutoruam_proyecto.ui.navigation.PerfilDestination
 import com.example.tutoruam_proyecto.ui.navigation.TutoriasDestination
 
@@ -3285,8 +4956,15 @@ private fun HomeNavHost(
             key(role) {
                 TutoriasScreen(
                     role = role,
+                    navController = navController,
                     onNavigateToChat = { chatId, otherName ->
                         navController.navigate(ChatDetailDestination(chatId, otherName))
+                    },
+                    onNavigateToMyPosts = {
+                        navController.navigate(MyPostsDestination)
+                    },
+                    onNavigateToClassDetail = { classId ->
+                        navController.navigate(ClassDetailDestination(classId, role))
                     }
                 )
             }
@@ -3294,7 +4972,11 @@ private fun HomeNavHost(
         composable<ChatDestination> {
             ChatScreen(
                 onChatClick = { chat ->
-                    val otherName = if (chat.tutorId == TokenManager.getUserId()) chat.studentName else chat.tutorName
+                    val otherName = if (chat.isGroup) {
+                        chat.groupName ?: "Grupo"
+                    } else {
+                        if (chat.tutorId == TokenManager.getUserId()) chat.studentName ?: "Estudiante" else chat.tutorName ?: "Tutor"
+                    }
                     navController.navigate(ChatDetailDestination(chat.id, otherName))
                 }
             )
@@ -3307,12 +4989,61 @@ private fun HomeNavHost(
                 onBackClick = { navController.popBackStack() }
             )
         }
+        composable<MyPostsDestination> {
+            MyPostsScreen(
+                role = role,
+                onBack = { navController.popBackStack() },
+                onNavigateToClassDetail = { classId ->
+                    navController.navigate(ClassDetailDestination(classId, role))
+                }
+            )
+        }
         composable<PerfilDestination> {
             val currentRole = if (TokenManager.getRole() == "TUTOR") UserRole.TUTOR else UserRole.ESTUDIANTE
             PerfilScreen(
                 role = currentRole,
                 onChangeRole = onChangeRole,
-                onLogout = onLogout
+                onLogout = onLogout,
+                onNavigateToChat = { chatId, otherName ->
+                    navController.navigate(ChatDetailDestination(chatId, otherName))
+                },
+                onNavigateToMyPosts = {
+                    navController.navigate(MyPostsDestination)
+                },
+                onNavigateToMyTutorias = {
+                    navController.navigate(MyTutoriasDestination)
+                },
+                onNavigateToMyClasses = {
+                    navController.navigate(MyClassesDestination)
+                }
+            )
+        }
+        composable<MyTutoriasDestination> {
+            MyTutoriasScreen(
+                onBack = { navController.popBackStack() },
+                onNavigateToChat = { chatId, otherName ->
+                    navController.navigate(ChatDetailDestination(chatId, otherName))
+                }
+            )
+        }
+        composable<MyClassesDestination> {
+            MyClassesScreen(
+                onBack = { navController.popBackStack() },
+                onNavigateToDetail = { classId ->
+                    navController.navigate(ClassDetailDestination(classId, role))
+                }
+            )
+        }
+        composable<ClassDetailDestination> { backStackEntry ->
+            val args = backStackEntry.toRoute<ClassDetailDestination>()
+            ClassDetailScreen(
+                classId = args.classId,
+                role = args.role,
+                onBack = { navController.popBackStack() },
+                onNavigateToChat = { chatId, otherName ->
+                    navController.navigate(ChatDetailDestination(chatId, otherName))
+                },
+                onNavigateToEdit = { /* Implementar navegación a edición si es necesario */ }
             )
         }
     }
@@ -3584,16 +5315,12 @@ package com.example.tutoruam_proyecto.ui.screen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ChevronRight
-import androidx.compose.material.icons.rounded.Logout
-import androidx.compose.material.icons.rounded.SwapHoriz
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -3609,23 +5336,48 @@ import com.example.tutoruam_proyecto.ui.service.ServiceLocator
 import com.example.tutoruam_proyecto.ui.service.TokenManager
 import com.example.tutoruam_proyecto.ui.viewmodel.PerfilViewModel
 import com.example.tutoruam_proyecto.ui.viewmodel.PerfilViewModelFactory
-import androidx.compose.runtime.*
+import com.example.tutoruam_proyecto.ui.viewmodel.RatingViewModel
+import com.example.tutoruam_proyecto.ui.viewmodel.RatingViewModelFactory
 
 @Composable
 fun PerfilScreen(
     role: UserRole,
+    userId: Long? = null, // ID del usuario a visualizar (null si es el propio)
     onChangeRole: () -> Unit = {},
-    onLogout: () -> Unit = {}
+    onLogout: () -> Unit = {},
+    onNavigateToChat: (Long, String) -> Unit = { _, _ -> },
+    onNavigateToMyPosts: () -> Unit = {},
+    onNavigateToMyTutorias: () -> Unit = {},
+    onNavigateToMyClasses: () -> Unit = {}
 ) {
     val viewModel: PerfilViewModel = viewModel(
         factory = PerfilViewModelFactory(ServiceLocator.authRepository)
     )
     val uiState by viewModel.uiState.collectAsState()
-    val scrollState = rememberScrollState()
-    val userName = TokenManager.getName()
-    val userEmail = TokenManager.getEmail()
+
+    val ratingViewModel: RatingViewModel = viewModel(
+        factory = RatingViewModelFactory(ServiceLocator.ratingRepository)
+    )
+    val averageState by ratingViewModel.averageState.collectAsState()
+    
+    // Si userId es null o igual al actual, es mi perfil
+    val isMyProfile = userId == null || userId == TokenManager.getUserId()
+    
+    // Aquí idealmente cargarías los datos del usuario si userId != null
+    // Por ahora asumimos que los datos del TokenManager son para "mi perfil"
+    val userName = if (isMyProfile) TokenManager.getName() else "Usuario $userId"
+    val userEmail = if (isMyProfile) TokenManager.getEmail() else ""
+    val userRole = if (isMyProfile) role else UserRole.TUTOR // Mock para otros perfiles
     
     var showConfirmDialog by remember { mutableStateOf(false) }
+
+    // Cargar rating si es un tutor (y no es el propio perfil, o si es el propio perfil y es tutor)
+    if (!isMyProfile || role == UserRole.TUTOR) {
+        val targetId = userId ?: TokenManager.getUserId()
+        LaunchedEffect(targetId) {
+            targetId?.let { ratingViewModel.loadAverage(it) }
+        }
+    }
 
     LaunchedEffect(uiState) {
         if (uiState is ApiResult.Success) {
@@ -3652,121 +5404,185 @@ fun PerfilScreen(
         )
     }
 
-    Column(
+    // 🔥 Box + Column para centrar todo perfectamente
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF8F9FB))
-            .verticalScroll(scrollState)
-            .padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally // Centering content
+            .background(Color(0xFFF8F9FB)),
+        contentAlignment = Alignment.Center
     ) {
-        if (uiState is ApiResult.Loading) {
-            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-        }
         Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                "Tu Perfil",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
-            )
-            Text(
-                "Información personal",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-
-        Card(
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
             modifier = Modifier
                 .fillMaxWidth()
-                .shadow(2.dp, RoundedCornerShape(24.dp))
+                .padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
+            if (uiState is ApiResult.Loading) {
+                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+            }
+            
             Column(
-                modifier = Modifier.padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Profile Circle
-                Box(
-                    modifier = Modifier
-                        .size(100.dp)
-                        .background(MaterialTheme.colorScheme.secondaryContainer, CircleShape),
-                    contentAlignment = Alignment.Center
+                Text(
+                    "Tu Perfil",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    "Información personal",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Card(
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .shadow(2.dp, RoundedCornerShape(24.dp))
+            ) {
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(100.dp)
+                            .background(MaterialTheme.colorScheme.secondaryContainer, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            userName.take(2).uppercase(),
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontSize = 32.sp
+                        )
+                    }
+
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            userName,
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            userEmail,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        if (averageState is ApiResult.Success) {
+                            val avg = (averageState as ApiResult.Success<Double>).data
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Rounded.Star, contentDescription = null, tint = Color(0xFFFFB300), modifier = Modifier.size(20.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    "%.1f".format(avg),
+                                    fontWeight = FontWeight.Bold,
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                            }
+                        }
+                    }
+
+                    Surface(
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        shape = RoundedCornerShape(50)
+                    ) {
+                        Text(
+                            text = if (isMyProfile) (if (role == UserRole.TUTOR) "Tutor" else "Estudiante") else "Tutor",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                        )
+                    }
+
+                    if (!isMyProfile) {
+                        Button(
+                            onClick = {
+                                userId?.let { id ->
+                                    viewModel.startChatWithUser(id) { chat ->
+                                        onNavigateToChat(chat.id, chat.tutorName ?: chat.studentName ?: "Chat")
+                                    }
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(Icons.Rounded.SwapHoriz, contentDescription = null) // Cambiar por icono de chat
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Iniciar chat")
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            if (isMyProfile) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        userName.take(2).uppercase(),
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontSize = 32.sp
-                    )
-                }
-
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        userName,
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        userEmail,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                // Display Role Tag
-                Surface(
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    shape = RoundedCornerShape(50)
-                ) {
-                    Text(
-                        text = if (role == UserRole.TUTOR) "Tutor" else "Estudiante",
+                        "Configuración",
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = 4.dp)
+                    )
+
+                    ProfileListItem(
+                        icon = Icons.Rounded.School,
+                        title = "Mis publicaciones",
+                        iconBgColor = MaterialTheme.colorScheme.primaryContainer,
+                        iconColor = MaterialTheme.colorScheme.primary,
+                        onClick = onNavigateToMyPosts
+                    )
+
+                    ProfileListItem(
+                        icon = Icons.Rounded.School,
+                        title = if (role == UserRole.TUTOR) "Mis tutorías" else "Mis clases",
+                        iconBgColor = MaterialTheme.colorScheme.tertiaryContainer,
+                        iconColor = MaterialTheme.colorScheme.tertiary,
+                        onClick = {
+                            if (role == UserRole.TUTOR) {
+                                onNavigateToMyTutorias()
+                            } else {
+                                onNavigateToMyClasses()
+                            }
+                        }
+                    )
+
+                    ProfileListItem(
+                        icon = Icons.Rounded.SwapHoriz,
+                        title = "Cambiar rol",
+                        iconBgColor = MaterialTheme.colorScheme.secondaryContainer,
+                        iconColor = MaterialTheme.colorScheme.primary,
+                        onClick = { showConfirmDialog = true }
+                    )
+
+                    ProfileListItem(
+                        icon = Icons.Rounded.Logout,
+                        title = "Cerrar sesión",
+                        iconBgColor = MaterialTheme.colorScheme.errorContainer,
+                        iconColor = MaterialTheme.colorScheme.error,
+                        onClick = onLogout
                     )
                 }
             }
+
+            Spacer(modifier = Modifier.height(24.dp))
         }
-
-        Column(
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(
-                "Configuración",
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = 4.dp)
-            )
-
-            ProfileListItem(
-                icon = Icons.Rounded.SwapHoriz,
-                title = "Cambiar rol",
-                iconBgColor = MaterialTheme.colorScheme.secondaryContainer,
-                iconColor = MaterialTheme.colorScheme.primary,
-                onClick = { showConfirmDialog = true }
-            )
-
-            ProfileListItem(
-                icon = Icons.Rounded.Logout,
-                title = "Cerrar sesión",
-                iconBgColor = MaterialTheme.colorScheme.errorContainer,
-                iconColor = MaterialTheme.colorScheme.error,
-                onClick = onLogout
-            )
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
     }
 }
 
@@ -3849,28 +5665,36 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter
+import java.util.Calendar
+import java.text.SimpleDateFormat
+import java.util.Locale
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.example.tutoruam_proyecto.ui.model.TutorClass
 import com.example.tutoruam_proyecto.ui.model.UserRole
+import com.example.tutoruam_proyecto.ui.navigation.ClassDetailDestination
+import com.example.tutoruam_proyecto.ui.navigation.MyPostsDestination
 import com.example.tutoruam_proyecto.ui.service.ApiResult
 import com.example.tutoruam_proyecto.ui.service.ServiceLocator
+import com.example.tutoruam_proyecto.ui.service.TokenManager
 import com.example.tutoruam_proyecto.ui.viewmodel.TutoriasViewModel
 import com.example.tutoruam_proyecto.ui.viewmodel.TutoriasViewModelFactory
+import com.example.tutoruam_proyecto.ui.utils.DateUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TutoriasScreen(
     role: UserRole,
-    onNavigateToChat: (Long, String) -> Unit = { _, _ -> }
+    navController: NavController,
+    onNavigateToChat: (Long, String) -> Unit = { _, _ -> },
+    onNavigateToMyPosts: () -> Unit = {},
+    onNavigateToClassDetail: (Long) -> Unit = {}
 ) {
     val viewModel: TutoriasViewModel = viewModel(
         factory = TutoriasViewModelFactory(
             ServiceLocator.tutoriasRepository,
             ServiceLocator.chatRepository,
+            ServiceLocator.authRepository,
             role
         )
     )
@@ -3879,7 +5703,10 @@ fun TutoriasScreen(
     
     var searchQuery by remember { mutableStateOf("") }
     var showForm by remember { mutableStateOf(false) }
+    var selectedItem by remember { mutableStateOf<TutorClass?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
+
+    var showConfirmAssignDialog by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(actionState) {
         when (val state = actionState) {
@@ -3887,6 +5714,17 @@ fun TutoriasScreen(
                 if (state.data is Pair<*, *>) {
                     val data = state.data as Pair<Long, String>
                     onNavigateToChat(data.first, data.second)
+                } else if (selectedItem?.type == "REQUEST" && role == UserRole.TUTOR) {
+                    // Después de asignar, obtener el chat entre el tutor y el estudiante
+                    val creatorId = selectedItem?.creatorId
+                    val currentUserId = TokenManager.getUserId()
+                    if (creatorId != null && currentUserId != null) {
+                        viewModel.findOrCreateChatWithUser(creatorId) { chat ->
+                            onNavigateToChat(chat.id, chat.tutorName ?: chat.studentName ?: "Chat")
+                        }
+                    } else {
+                        snackbarHostState.showSnackbar("Ayuda ofrecida correctamente")
+                    }
                 } else {
                     snackbarHostState.showSnackbar("Operación exitosa")
                 }
@@ -3900,35 +5738,54 @@ fun TutoriasScreen(
         }
     }
 
+    if (showConfirmAssignDialog != null) {
+        AlertDialog(
+            onDismissRequest = { showConfirmAssignDialog = null },
+            title = { Text("¡Ayuda ofrecida!") },
+            text = { Text("Te has comprometido a ayudar a ${showConfirmAssignDialog}. Puedes contactar con el estudiante desde la sección de chats.") },
+            confirmButton = {
+                Button(onClick = { showConfirmAssignDialog = null }) {
+                    Text("Entendido")
+                }
+            }
+        )
+    }
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
                     Row(
+                        modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(36.dp)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    Icons.Rounded.School,
-                                    contentDescription = null,
-                                    tint = Color.White,
-                                    modifier = Modifier.size(20.dp)
-                                )
+                            Surface(
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(36.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        Icons.Rounded.School,
+                                        contentDescription = null,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
                             }
+                            Text(
+                                "TutorUAM",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
                         }
-                        Text(
-                            "Universidad Americana",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
@@ -3940,7 +5797,8 @@ fun TutoriasScreen(
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = Color.White,
                 shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.padding(bottom = 0.dp) // Bajado al máximo posible dentro del Scaffold
+                // 🔥 IMPORTANTE: Este padding evita que el FAB se superponga con la barra inferior
+                modifier = Modifier.padding(bottom = 16.dp)
             ) {
                 Icon(imageVector = Icons.Default.Add, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
@@ -3951,12 +5809,14 @@ fun TutoriasScreen(
             }
         }
     ) { innerPadding ->
+        // 🔥 El padding innerPadding ya incluye el espacio de la barra inferior.
+        // No debemos añadir más padding inferior a la lista, o se duplicará.
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color(0xFFF8F9FB))
-                .padding(innerPadding)
-                .padding(horizontal = 20.dp)
+                .padding(innerPadding)   // Padding del Scaffold
+                .padding(horizontal = 20.dp) // Padding lateral
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -4009,19 +5869,17 @@ fun TutoriasScreen(
                 is ApiResult.Success -> {
                     LazyColumn(
                         verticalArrangement = Arrangement.spacedBy(16.dp),
-                        contentPadding = PaddingValues(bottom = 80.dp),
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        items(state.data) { item ->
+                        items(state.data as List<TutorClass>) { item ->
                             TutorClassCard(
                                 item = item,
                                 role = role,
                                 onActionClick = {
-                                    if (role == UserRole.ESTUDIANTE) {
-                                        viewModel.joinClass(item.id, item.creatorName, item.creatorId)
+                                    if (item.type == "CLASS") {
+                                        onNavigateToClassDetail(item.id)
                                     } else {
-                                        // Tutor clicks on a request to offer help -> open chat or similar
-                                        viewModel.joinClass(item.id, item.creatorName, item.creatorId)
+                                        selectedItem = item
                                     }
                                 }
                             )
@@ -4041,6 +5899,11 @@ fun TutoriasScreen(
                 showForm = false
             }
         )
+    }
+
+    selectedItem?.let { item ->
+        navController.navigate(ClassDetailDestination(item.id, role))
+        selectedItem = null
     }
 }
 
@@ -4121,7 +5984,7 @@ fun TutorClassCard(
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                     Text(
-                                        text = displayTime,
+                                        text = DateUtils.formatDate(displayTime),
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -4161,7 +6024,7 @@ fun TutorClassCard(
                 }
             }
 
-            // Cupos en la esquina
+            // Cupos en la esquina superior derecha
             if (item.type == "CLASS" && item.maxStudents != null && item.maxStudents > 1) {
                 Text(
                     text = "Cupos: ${item.currentStudents ?: 0}/${item.maxStudents}",
@@ -4181,13 +6044,17 @@ fun TutorClassCard(
 @Composable
 fun PostFormDialog(
     role: UserRole,
+    initialSubject: String = "",
+    initialTime: String = "",
+    initialDescription: String = "",
+    initialMaxStudents: String = "1",
     onDismiss: () -> Unit,
     onPost: (String, String, String, Int) -> Unit
 ) {
-    var subject by remember { mutableStateOf("") }
-    var time by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
-    var maxStudents by remember { mutableStateOf("1") }
+    var subject by remember { mutableStateOf(initialSubject) }
+    var time by remember { mutableStateOf(initialTime) }
+    var description by remember { mutableStateOf(initialDescription) }
+    var maxStudents by remember { mutableStateOf(initialMaxStudents) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     Dialog(onDismissRequest = onDismiss) {
@@ -4251,10 +6118,8 @@ fun PostFormDialog(
 
                 Button(
                     onClick = {
-                        // Limpiar error previo
                         errorMessage = null
 
-                        // Validaciones
                         if (subject.isBlank()) {
                             errorMessage = "La materia es obligatoria"
                             return@Button
@@ -4268,21 +6133,29 @@ fun PostFormDialog(
                             return@Button
                         }
 
-                        // Parsear hora
                         val formattedTime = try {
-                            val timePart = LocalTime.parse(time, DateTimeFormatter.ofPattern("HH:mm"))
-                            val dateTime = LocalDateTime.of(LocalDate.now(), timePart)
-                            dateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                            val sdfInput = SimpleDateFormat("HH:mm", Locale.getDefault())
+                            val date = sdfInput.parse(time)
+                            val calendar = Calendar.getInstance()
+                            val now = Calendar.getInstance()
+                            calendar.time = date ?: throw Exception()
+                            
+                            now.set(Calendar.HOUR_OF_DAY, calendar.get(Calendar.HOUR_OF_DAY))
+                            now.set(Calendar.MINUTE, calendar.get(Calendar.MINUTE))
+                            now.set(Calendar.SECOND, 0)
+                            now.set(Calendar.MILLISECOND, 0)
+
+                            val sdfOutput = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+                            sdfOutput.format(now.time)
                         } catch (e: Exception) {
                             errorMessage = "Formato de hora inválido. Usa HH:mm (ej. 15:30)"
                             return@Button
                         }
 
-                        // Validar cantidad de estudiantes (solo para tutor)
                         val max = if (role == UserRole.TUTOR) {
                             maxStudents.toIntOrNull()
                         } else {
-                            1 // Los estudiantes no envían maxStudents
+                            1
                         }
 
                         if (role == UserRole.TUTOR && (max == null || max <= 0)) {
@@ -4290,7 +6163,6 @@ fun PostFormDialog(
                             return@Button
                         }
 
-                        // Enviar datos
                         onPost(
                             subject,
                             formattedTime,

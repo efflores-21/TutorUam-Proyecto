@@ -3,6 +3,7 @@ package com.example.tutoruam_proyecto.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.tutoruam_proyecto.ui.model.Chat
 import com.example.tutoruam_proyecto.ui.repository.AuthRepository
 import com.example.tutoruam_proyecto.ui.service.ApiResult
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,14 +15,25 @@ class PerfilViewModel(
     private val repository: AuthRepository
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow<ApiResult<Unit>?>(null)
-    val uiState: StateFlow<ApiResult<Unit>?> = _uiState.asStateFlow()
+    private val _uiState = MutableStateFlow<ApiResult<Any>?>(null)
+    val uiState: StateFlow<ApiResult<Any>?> = _uiState.asStateFlow()
 
     fun changeRole(newRole: String) {
         viewModelScope.launch {
             _uiState.value = ApiResult.Loading
             val result = repository.changeRole(newRole)
-            _uiState.value = result
+            _uiState.value = result as ApiResult<Any>
+        }
+    }
+
+    fun startChatWithUser(recipientId: Long, onChatCreated: (Chat) -> Unit) {
+        viewModelScope.launch {
+            _uiState.value = ApiResult.Loading
+            val result = repository.createChat(recipientId)
+            if (result is ApiResult.Success) {
+                onChatCreated(result.data)
+            }
+            _uiState.value = result as ApiResult<Any>
         }
     }
 

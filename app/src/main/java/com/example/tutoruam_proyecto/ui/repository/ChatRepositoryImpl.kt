@@ -1,8 +1,6 @@
 package com.example.tutoruam_proyecto.ui.repository
 
-import com.example.tutoruam_proyecto.ui.model.SendMessageRequest
-import com.example.tutoruam_proyecto.ui.model.Chat
-import com.example.tutoruam_proyecto.ui.model.Message
+import com.example.tutoruam_proyecto.ui.model.*
 import com.example.tutoruam_proyecto.ui.service.ApiResult
 import com.example.tutoruam_proyecto.ui.service.ApiService
 import java.io.IOException
@@ -21,6 +19,18 @@ class ChatRepositoryImpl(
 
     override suspend fun sendMessage(chatId: Long, content: String): ApiResult<Message> {
         return executeRequest { apiService.sendMessage(chatId, SendMessageRequest(content)) }
+    }
+
+    override suspend fun getChatParticipants(chatId: Long): ApiResult<List<UserProfile>> {
+        return executeRequest { apiService.getChatParticipants(chatId) }
+    }
+
+    override suspend fun addParticipant(chatId: Long, userId: Long): ApiResult<Unit> {
+        return executeRequest { apiService.addParticipant(chatId, userId) }
+    }
+
+    override suspend fun removeParticipant(chatId: Long, userId: Long): ApiResult<Unit> {
+        return executeRequest { apiService.removeParticipant(chatId, userId) }
     }
 
     private suspend fun <T> executeRequest(

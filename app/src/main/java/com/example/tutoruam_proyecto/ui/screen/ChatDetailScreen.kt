@@ -143,6 +143,15 @@ fun MessageBubble(message: Message, isMine: Boolean) {
             tonalElevation = 0.dp
         ) {
             Column(modifier = Modifier.padding(12.dp)) {
+                if (!isMine) {
+                    Text(
+                        text = message.senderName ?: "Usuario",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                }
                 Text(
                     text = message.content,
                     style = MaterialTheme.typography.bodyMedium,

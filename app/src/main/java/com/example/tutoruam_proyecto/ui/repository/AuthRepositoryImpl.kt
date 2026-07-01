@@ -1,9 +1,7 @@
 package com.example.tutoruam_proyecto.ui.repository
 
 import android.util.Log
-import com.example.tutoruam_proyecto.ui.model.LoginRequest
-import com.example.tutoruam_proyecto.ui.model.LoginResponse
-import com.example.tutoruam_proyecto.ui.model.RegisterRequest
+import com.example.tutoruam_proyecto.ui.model.*
 import com.example.tutoruam_proyecto.ui.service.ApiResult
 import com.example.tutoruam_proyecto.ui.service.ApiService
 import com.example.tutoruam_proyecto.ui.service.TokenManager
@@ -43,6 +41,24 @@ class AuthRepositoryImpl(
                 ApiResult.Error(
                     code = response.code(),
                     message = response.errorBody()?.string() ?: "Error al cambiar rol"
+                )
+            }
+        } catch (e: Exception) {
+            ApiResult.Error(message = e.message ?: "Error inesperado", exception = e)
+        }
+    }
+
+    override suspend fun createChat(recipientId: Long): ApiResult<Chat> {
+        return try {
+            val response = apiService.createChat(recipientId)
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null) ApiResult.Success(body)
+                else ApiResult.Error(message = "Respuesta vacía")
+            } else {
+                ApiResult.Error(
+                    code = response.code(),
+                    message = response.errorBody()?.string() ?: "Error al crear chat"
                 )
             }
         } catch (e: Exception) {

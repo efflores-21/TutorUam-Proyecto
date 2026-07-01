@@ -41,3 +41,9 @@ data class CreateClassRequest(
     val description: String,
     val maxStudents: Int
 )
+
+data class CreateHelpRequest(
+    val subject: String,
+    val description: String,
+    val timeLimit: String? = null
+)

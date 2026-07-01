@@ -34,6 +34,10 @@ import androidx.navigation.compose.rememberNavController
 import com.example.tutoruam_proyecto.ui.model.UserRole
 import com.example.tutoruam_proyecto.ui.navigation.ChatDestination
 import com.example.tutoruam_proyecto.ui.navigation.ChatDetailDestination
+import com.example.tutoruam_proyecto.ui.navigation.ClassDetailDestination
+import com.example.tutoruam_proyecto.ui.navigation.MyClassesDestination
+import com.example.tutoruam_proyecto.ui.navigation.MyPostsDestination
+import com.example.tutoruam_proyecto.ui.navigation.MyTutoriasDestination
 import com.example.tutoruam_proyecto.ui.navigation.PerfilDestination
 import com.example.tutoruam_proyecto.ui.navigation.TutoriasDestination
 
@@ -153,8 +157,15 @@ private fun HomeNavHost(
             key(role) {
                 TutoriasScreen(
                     role = role,
+                    navController = navController,
                     onNavigateToChat = { chatId, otherName ->
                         navController.navigate(ChatDetailDestination(chatId, otherName))
+                    },
+                    onNavigateToMyPosts = {
+                        navController.navigate(MyPostsDestination)
+                    },
+                    onNavigateToClassDetail = { classId ->
+                        navController.navigate(ClassDetailDestination(classId, role))
                     }
                 )
             }
@@ -162,7 +173,11 @@ private fun HomeNavHost(
         composable<ChatDestination> {
             ChatScreen(
                 onChatClick = { chat ->
-                    val otherName = if (chat.tutorId == TokenManager.getUserId()) chat.studentName else chat.tutorName
+                    val otherName = if (chat.isGroup) {
+                        chat.groupName ?: "Grupo"
+                    } else {
+                        if (chat.tutorId == TokenManager.getUserId()) chat.studentName ?: "Estudiante" else chat.tutorName ?: "Tutor"
+                    }
                     navController.navigate(ChatDetailDestination(chat.id, otherName))
                 }
             )
@@ -175,12 +190,61 @@ private fun HomeNavHost(
                 onBackClick = { navController.popBackStack() }
             )
         }
+        composable<MyPostsDestination> {
+            MyPostsScreen(
+                role = role,
+                onBack = { navController.popBackStack() },
+                onNavigateToClassDetail = { classId ->
+                    navController.navigate(ClassDetailDestination(classId, role))
+                }
+            )
+        }
         composable<PerfilDestination> {
             val currentRole = if (TokenManager.getRole() == "TUTOR") UserRole.TUTOR else UserRole.ESTUDIANTE
             PerfilScreen(
                 role = currentRole,
                 onChangeRole = onChangeRole,
-                onLogout = onLogout
+                onLogout = onLogout,
+                onNavigateToChat = { chatId, otherName ->
+                    navController.navigate(ChatDetailDestination(chatId, otherName))
+                },
+                onNavigateToMyPosts = {
+                    navController.navigate(MyPostsDestination)
+                },
+                onNavigateToMyTutorias = {
+                    navController.navigate(MyTutoriasDestination)
+                },
+                onNavigateToMyClasses = {
+                    navController.navigate(MyClassesDestination)
+                }
+            )
+        }
+        composable<MyTutoriasDestination> {
+            MyTutoriasScreen(
+                onBack = { navController.popBackStack() },
+                onNavigateToChat = { chatId, otherName ->
+                    navController.navigate(ChatDetailDestination(chatId, otherName))
+                }
+            )
+        }
+        composable<MyClassesDestination> {
+            MyClassesScreen(
+                onBack = { navController.popBackStack() },
+                onNavigateToDetail = { classId ->
+                    navController.navigate(ClassDetailDestination(classId, role))
+                }
+            )
+        }
+        composable<ClassDetailDestination> { backStackEntry ->
+            val args = backStackEntry.toRoute<ClassDetailDestination>()
+            ClassDetailScreen(
+                classId = args.classId,
+                role = args.role,
+                onBack = { navController.popBackStack() },
+                onNavigateToChat = { chatId, otherName ->
+                    navController.navigate(ChatDetailDestination(chatId, otherName))
+                },
+                onNavigateToEdit = { /* Implementar navegación a edición si es necesario */ }
             )
         }
     }

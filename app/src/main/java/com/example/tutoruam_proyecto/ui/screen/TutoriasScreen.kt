@@ -26,10 +26,14 @@ import java.util.Calendar
 import java.text.SimpleDateFormat
 import java.util.Locale
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.example.tutoruam_proyecto.ui.model.TutorClass
 import com.example.tutoruam_proyecto.ui.model.UserRole
+import com.example.tutoruam_proyecto.ui.navigation.ClassDetailDestination
+import com.example.tutoruam_proyecto.ui.navigation.MyPostsDestination
 import com.example.tutoruam_proyecto.ui.service.ApiResult
 import com.example.tutoruam_proyecto.ui.service.ServiceLocator
+import com.example.tutoruam_proyecto.ui.service.TokenManager
 import com.example.tutoruam_proyecto.ui.viewmodel.TutoriasViewModel
 import com.example.tutoruam_proyecto.ui.viewmodel.TutoriasViewModelFactory
 import com.example.tutoruam_proyecto.ui.utils.DateUtils
@@ -38,12 +42,16 @@ import com.example.tutoruam_proyecto.ui.utils.DateUtils
 @Composable
 fun TutoriasScreen(
     role: UserRole,
-    onNavigateToChat: (Long, String) -> Unit = { _, _ -> }
+    navController: NavController,
+    onNavigateToChat: (Long, String) -> Unit = { _, _ -> },
+    onNavigateToMyPosts: () -> Unit = {},
+    onNavigateToClassDetail: (Long) -> Unit = {}
 ) {
     val viewModel: TutoriasViewModel = viewModel(
         factory = TutoriasViewModelFactory(
             ServiceLocator.tutoriasRepository,
             ServiceLocator.chatRepository,
+            ServiceLocator.authRepository,
             role
         )
     )
@@ -52,7 +60,10 @@ fun TutoriasScreen(
     
     var searchQuery by remember { mutableStateOf("") }
     var showForm by remember { mutableStateOf(false) }
+    var selectedItem by remember { mutableStateOf<TutorClass?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
+
+    var showConfirmAssignDialog by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(actionState) {
         when (val state = actionState) {
@@ -60,6 +71,17 @@ fun TutoriasScreen(
                 if (state.data is Pair<*, *>) {
                     val data = state.data as Pair<Long, String>
                     onNavigateToChat(data.first, data.second)
+                } else if (selectedItem?.type == "REQUEST" && role == UserRole.TUTOR) {
+                    // Después de asignar, obtener el chat entre el tutor y el estudiante
+                    val creatorId = selectedItem?.creatorId
+                    val currentUserId = TokenManager.getUserId()
+                    if (creatorId != null && currentUserId != null) {
+                        viewModel.findOrCreateChatWithUser(creatorId) { chat ->
+                            onNavigateToChat(chat.id, chat.tutorName ?: chat.studentName ?: "Chat")
+                        }
+                    } else {
+                        snackbarHostState.showSnackbar("Ayuda ofrecida correctamente")
+                    }
                 } else {
                     snackbarHostState.showSnackbar("Operación exitosa")
                 }
@@ -73,35 +95,54 @@ fun TutoriasScreen(
         }
     }
 
+    if (showConfirmAssignDialog != null) {
+        AlertDialog(
+            onDismissRequest = { showConfirmAssignDialog = null },
+            title = { Text("¡Ayuda ofrecida!") },
+            text = { Text("Te has comprometido a ayudar a ${showConfirmAssignDialog}. Puedes contactar con el estudiante desde la sección de chats.") },
+            confirmButton = {
+                Button(onClick = { showConfirmAssignDialog = null }) {
+                    Text("Entendido")
+                }
+            }
+        )
+    }
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
                     Row(
+                        modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(36.dp)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    Icons.Rounded.School,
-                                    contentDescription = null,
-                                    tint = Color.White,
-                                    modifier = Modifier.size(20.dp)
-                                )
+                            Surface(
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(36.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        Icons.Rounded.School,
+                                        contentDescription = null,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
                             }
+                            Text(
+                                "TutorUAM",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
                         }
-                        Text(
-                            "Universidad Americana",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
@@ -185,18 +226,21 @@ fun TutoriasScreen(
                 is ApiResult.Success -> {
                     LazyColumn(
                         verticalArrangement = Arrangement.spacedBy(16.dp),
-                        // 🔥 Quitamos contentPadding para evitar el doble espacio con el padding del contenedor
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        items(state.data) { item ->
+                        items(state.data as List<TutorClass>) { item ->
                             TutorClassCard(
                                 item = item,
                                 role = role,
                                 onActionClick = {
-                                    if (role == UserRole.ESTUDIANTE) {
-                                        viewModel.joinClass(item.id, item.creatorName, item.creatorId)
+                                    if (item.type == "CLASS") {
+                                        onNavigateToClassDetail(item.id)
                                     } else {
-                                        viewModel.joinClass(item.id, item.creatorName, item.creatorId)
+                                        // Es una solicitud: ofrecer ayuda
+                                        selectedItem = item
+                                        // No navegues a ClassDetailScreen, ejecuta la acción directamente
+                                        viewModel.assignRequest(item.id)
+                                        selectedItem = null
                                     }
                                 }
                             )
@@ -217,6 +261,9 @@ fun TutoriasScreen(
             }
         )
     }
+
+    // Eliminado el bloque de navegación automática por selectedItem
+
 }
 
 @Composable
@@ -356,13 +403,17 @@ fun TutorClassCard(
 @Composable
 fun PostFormDialog(
     role: UserRole,
+    initialSubject: String = "",
+    initialTime: String = "",
+    initialDescription: String = "",
+    initialMaxStudents: String = "1",
     onDismiss: () -> Unit,
     onPost: (String, String, String, Int) -> Unit
 ) {
-    var subject by remember { mutableStateOf("") }
-    var time by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
-    var maxStudents by remember { mutableStateOf("1") }
+    var subject by remember { mutableStateOf(initialSubject) }
+    var time by remember { mutableStateOf(initialTime) }
+    var description by remember { mutableStateOf(initialDescription) }
+    var maxStudents by remember { mutableStateOf(initialMaxStudents) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     Dialog(onDismissRequest = onDismiss) {

@@ -23,5 +23,17 @@ object ChatDestination
 object PerfilDestination
 
 @Serializable
+object MyPostsDestination
+
+@Serializable
+object MyTutoriasDestination
+
+@Serializable
+object MyClassesDestination
+
+@Serializable
 data class ChatDetailDestination(val chatId: Long, val otherUserName: String)
+
+@Serializable
+data class ClassDetailDestination(val classId: Long, val role: com.example.tutoruam_proyecto.ui.model.UserRole)
 
